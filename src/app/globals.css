@@ -1,0 +1,131 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,400;0,14..32,500;0,14..32,600;0,14..32,700;0,14..32,800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply antialiased;
+    background-color: #F5F4F0;
+    font-family: 'Inter', system-ui, sans-serif;
+    color: #1A1A1A;
+  }
+}
+
+@layer components {
+  /* Kaarten */
+  .card {
+    @apply bg-white p-6;
+    border: 1px solid #EBEBEA;
+    border-radius: 10px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  }
+
+  .card-hover {
+    @apply transition-shadow duration-150;
+  }
+  .card-hover:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  }
+
+  /* Buttons */
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 whitespace-nowrap text-white font-medium text-sm cursor-pointer transition-all duration-150 disabled:opacity-50;
+    background-color: #004BAD;
+    padding: 0.625rem 1.25rem;
+    border-radius: 8px;
+  }
+  .btn-primary:hover:not(:disabled) {
+    background-color: #00439c;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 whitespace-nowrap font-medium text-sm cursor-pointer transition-all duration-150;
+    background-color: #FFFFFF;
+    color: #1A1A1A;
+    padding: 0.625rem 1rem;
+    border: 1px solid #EBEBEA;
+    border-radius: 8px;
+  }
+  .btn-secondary:hover {
+    background-color: #F5F4F0;
+  }
+
+  .btn-danger {
+    @apply inline-flex items-center justify-center gap-2 whitespace-nowrap font-medium text-sm cursor-pointer transition-colors duration-150;
+    background-color: #fdeaea;
+    color: #E05252;
+    padding: 0.5rem 0.75rem;
+    border-radius: 8px;
+  }
+  .btn-danger:hover {
+    background-color: #f9d8d8;
+  }
+
+  /* Inputs */
+  .input {
+    @apply w-full text-sm bg-white transition-all;
+    border: 1px solid #EBEBEA;
+    border-radius: 8px;
+    padding: 0.625rem 1rem;
+    color: #1A1A1A;
+  }
+  .input::placeholder {
+    color: #9CA3AF;
+  }
+  .input:focus {
+    @apply outline-none;
+    border-color: #004BAD;
+    box-shadow: 0 0 0 3px rgba(0, 75, 173, 0.12);
+  }
+
+  .label {
+    @apply block text-sm font-medium mb-1.5;
+    color: #1A1A1A;
+  }
+
+  .badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+  }
+
+  /* Kaarttitel: 13px, 500, uppercase, letterspacing */
+  .card-title {
+    font-size: 13px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #6B7280;
+  }
+
+  .section-title {
+    @apply font-semibold mb-4;
+    font-size: 15px;
+    color: #1A1A1A;
+  }
+
+  /* Sectielabel: 11px uppercase met letterspacing */
+  .section-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #6B7280;
+  }
+
+  /* Paginatitel: 24px, 600 */
+  .page-title {
+    @apply mb-6;
+    font-size: 24px;
+    font-weight: 600;
+    color: #1A1A1A;
+  }
+
+  /* KPI bedrag: 28px, 700 */
+  .kpi-value {
+    font-size: 28px;
+    font-weight: 700;
+    color: #1A1A1A;
+    line-height: 1.1;
+  }
+}
