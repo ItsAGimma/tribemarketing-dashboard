@@ -71,7 +71,7 @@ export default function HomePage() {
     <div className="max-w-5xl space-y-10">
       {/* Header */}
       <div>
-        <h1 className="page-title mb-1">Goedemorgen</h1>
+        <h1 className="page-title mb-1">{nu.getHours() < 12 ? "Goedemorgen" : nu.getHours() < 18 ? "Goedemiddag" : "Goedenavond"}</h1>
         <p className="text-muted text-sm">
           {nu.getDate()} {maanden[nu.getMonth()]} {nu.getFullYear()} · Tribe Marketing Dashboard
         </p>
