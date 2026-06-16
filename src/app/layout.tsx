@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import Navigation from "@/components/Navigation";
+import { headers } from "next/headers";
 
 export const metadata: Metadata = {
   title: "Tribe Marketing Dashboard",
@@ -8,15 +9,23 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
+  const headersList = headers();
+  const pathname = headersList.get("x-pathname") || "";
+  const isLogin = pathname === "/login";
+
   return (
     <html lang="nl">
       <body>
-        <div className="flex min-h-screen">
-          <Navigation />
-          <main className="flex-1 p-10 overflow-auto min-h-screen" style={{ backgroundColor: "#F5F4F0" }}>
-            {children}
-          </main>
-        </div>
+        {isLogin ? (
+          children
+        ) : (
+          <div className="flex min-h-screen">
+            <Navigation />
+            <main className="flex-1 p-10 overflow-auto min-h-screen" style={{ backgroundColor: "#F5F4F0" }}>
+              {children}
+            </main>
+          </div>
+        )}
       </body>
     </html>
   );

@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { Home, Layout, BarChart2, DollarSign, FileText, Settings } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
+import { Home, Layout, BarChart2, DollarSign, FileText, Settings, LogOut } from "lucide-react";
+import { getSupabaseBrowser } from "@/lib/supabase-browser";
 
 const navItems = [
   { href: "/", label: "Dashboard", icon: Home },
@@ -14,6 +15,14 @@ const navItems = [
 
 export default function Navigation() {
   const pathname = usePathname();
+  const router = useRouter();
+
+  async function uitloggen() {
+    const sb = getSupabaseBrowser();
+    await sb.auth.signOut();
+    router.push("/login");
+    router.refresh();
+  }
 
   return (
     <aside className="w-60 min-h-screen flex flex-col shrink-0" style={{ backgroundColor: "#0A2342" }}>
@@ -49,7 +58,7 @@ export default function Navigation() {
         </ul>
       </nav>
 
-      <div className="px-3 py-4 border-t border-white/5">
+      <div className="px-3 py-4 border-t border-white/5 space-y-1">
         <Link
           href="/instellingen"
           className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 w-full ${
@@ -61,6 +70,13 @@ export default function Navigation() {
           <Settings size={18} strokeWidth={2} />
           Instellingen
         </Link>
+        <button
+          onClick={uitloggen}
+          className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 w-full text-[#8FA0BC] hover:bg-white/5 hover:text-white"
+        >
+          <LogOut size={18} strokeWidth={2} />
+          Uitloggen
+        </button>
       </div>
     </aside>
   );
