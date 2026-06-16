@@ -187,6 +187,19 @@ export default function InstellingenPage() {
           {opslaan ? "Opslaan..." : "Instellingen opslaan"}
         </button>
       </form>
+
+      <div className="mt-8 pt-6 border-t border-hairline">
+        <a
+          href="/instellingen/audit-log"
+          className="flex items-center justify-between px-4 py-3 rounded-xl border border-hairline bg-white hover:border-[#004BAD]/30 transition-colors"
+        >
+          <div>
+            <p className="text-sm font-medium text-ink">Audit log</p>
+            <p className="text-xs text-muted mt-0.5">Bekijk alle wijzigingen: wie heeft wat toegevoegd, bewerkt of verwijderd</p>
+          </div>
+          <span className="text-muted text-sm">→</span>
+        </a>
+      </div>
     </div>
   );
 }

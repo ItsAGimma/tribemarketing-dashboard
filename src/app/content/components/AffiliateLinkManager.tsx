@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react";
 import KpiCard from "@/components/KpiCard";
+import PersoonSelector, { type Persoon } from "@/components/PersoonSelector";
+import { logActie } from "@/lib/audit";
 
 interface Artikel {
   id: number;
@@ -21,7 +23,7 @@ interface AffiliateLink {
   artikelen: Artikel[];
 }
 
-const lege = { naam: "", url: "", platform: "", categorie: "", notities: "" };
+const lege = { naam: "", url: "", platform: "", categorie: "", notities: "", toegevoegd_door: "" as Persoon | "" };
 const leegArtikel = { titel: "", url: "" };
 
 export default function AffiliateLinkManager() {
@@ -42,11 +44,14 @@ export default function AffiliateLinkManager() {
 
   async function handleOpslaan(e: React.FormEvent) {
     e.preventDefault();
-    await fetch("/api/affiliate-links", {
+    if (!formulier.toegevoegd_door) return;
+    const res = await fetch("/api/affiliate-links", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(formulier),
     });
+    const json = await res.json();
+    await logActie("aangemaakt", "affiliate_links", json.id ?? "", formulier.naam, formulier.toegevoegd_door);
     setFormulier(lege);
     setToonFormulier(false);
     laad();
@@ -54,11 +59,13 @@ export default function AffiliateLinkManager() {
 
   async function handleVerwijder(id: number) {
     if (!confirm("Affiliate link verwijderen? Gekoppelde artikelen worden ook verwijderd.")) return;
+    const link = links.find((l) => l.id === id);
     await fetch("/api/affiliate-links", {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id }),
     });
+    await logActie("verwijderd", "affiliate_links", id, link?.naam || String(id));
     laad();
   }
 
@@ -133,8 +140,11 @@ export default function AffiliateLinkManager() {
               <label className="label">Notities</label>
               <input type="text" className="input" placeholder="bijv. 4% commissie" value={formulier.notities} onChange={(e) => setFormulier((p) => ({ ...p, notities: e.target.value }))} />
             </div>
+            <div className="col-span-2">
+              <PersoonSelector value={formulier.toegevoegd_door} onChange={(v) => setFormulier((p) => ({ ...p, toegevoegd_door: v }))} />
+            </div>
             <div className="col-span-2 flex gap-3">
-              <button type="submit" className="btn-primary">Toevoegen</button>
+              <button type="submit" className="btn-primary" disabled={!formulier.toegevoegd_door}>Toevoegen</button>
               <button type="button" onClick={() => setToonFormulier(false)} className="btn-secondary">Annuleren</button>
             </div>
           </form>

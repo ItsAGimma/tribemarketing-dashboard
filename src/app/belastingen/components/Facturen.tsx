@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react";
 import KpiCard from "@/components/KpiCard";
+import PersoonSelector, { type Persoon } from "@/components/PersoonSelector";
+import { logActie } from "@/lib/audit";
 
 interface Factuur {
   id: number;
@@ -37,6 +39,7 @@ export default function Facturen() {
     btw_tarief: "21",
     omschrijving: "",
     status: "verzonden",
+    toegevoegd_door: "" as Persoon | "",
   });
 
   const laad = async () => {
@@ -57,8 +60,9 @@ export default function Facturen() {
 
   const toevoegen = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!form.toegevoegd_door) return;
     setOpslaan(true);
-    await fetch("/api/belastingen/facturen", {
+    const res = await fetch("/api/belastingen/facturen", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -68,9 +72,11 @@ export default function Facturen() {
         btw_bedrag: btwBedrag(),
       }),
     });
+    const json = await res.json();
+    await logActie("aangemaakt", "facturen", json.id ?? "", `${form.factuurnummer} - ${form.klant}`, form.toegevoegd_door);
     setToonFormulier(false);
     setOpslaan(false);
-    setForm({ factuurnummer: "", klant: "", datum: new Date().toISOString().slice(0, 10), vervaldatum: "", bedrag: "", btw_tarief: "21", omschrijving: "", status: "verzonden" });
+    setForm({ factuurnummer: "", klant: "", datum: new Date().toISOString().slice(0, 10), vervaldatum: "", bedrag: "", btw_tarief: "21", omschrijving: "", status: "verzonden", toegevoegd_door: "" });
     laad();
   };
 
@@ -85,11 +91,13 @@ export default function Facturen() {
 
   const verwijder = async (id: number) => {
     if (!confirm("Factuur verwijderen?")) return;
+    const f = facturen.find((x) => x.id === id);
     await fetch("/api/belastingen/facturen", {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id }),
     });
+    await logActie("verwijderd", "facturen", id, f ? `${f.factuurnummer} - ${f.klant}` : String(id));
     laad();
   };
 
@@ -166,9 +174,12 @@ export default function Facturen() {
                 <option value="betaald">Betaald</option>
               </select>
             </div>
+            <div>
+              <PersoonSelector value={form.toegevoegd_door} onChange={(v) => setForm((p) => ({ ...p, toegevoegd_door: v }))} />
+            </div>
             <div className="flex items-end gap-3 justify-end">
               <button type="button" onClick={() => setToonFormulier(false)} className="btn-secondary text-sm">Annuleren</button>
-              <button type="submit" disabled={opslaan} className="btn-primary text-sm">{opslaan ? "Opslaan..." : "Toevoegen"}</button>
+              <button type="submit" disabled={opslaan || !form.toegevoegd_door} className="btn-primary text-sm">{opslaan ? "Opslaan..." : "Toevoegen"}</button>
             </div>
           </form>
         </div>

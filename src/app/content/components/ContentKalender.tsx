@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import PersoonSelector, { type Persoon } from "@/components/PersoonSelector";
+import { logActie } from "@/lib/audit";
 
 interface ContentItem {
   id: number;
@@ -23,7 +25,7 @@ const statusLabel = {
   gepubliceerd: "Gepubliceerd",
 };
 
-const lege = { titel: "", status: "idee", publicatiedatum: "", categorie: "" };
+const lege = { titel: "", status: "idee", publicatiedatum: "", categorie: "", toegevoegd_door: "" as Persoon | "" };
 
 export default function ContentKalender() {
   const [items, setItems] = useState<ContentItem[]>([]);
@@ -42,18 +44,22 @@ export default function ContentKalender() {
 
   async function handleOpslaan(e: React.FormEvent) {
     e.preventDefault();
+    if (!formulier.toegevoegd_door) return;
     if (bewerkId) {
       await fetch("/api/content-kalender", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id: bewerkId, ...formulier }),
       });
+      await logActie("bewerkt", "content_kalender", bewerkId, formulier.titel, formulier.toegevoegd_door);
     } else {
-      await fetch("/api/content-kalender", {
+      const res = await fetch("/api/content-kalender", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formulier),
       });
+      const json = await res.json();
+      await logActie("aangemaakt", "content_kalender", json.id ?? "", formulier.titel, formulier.toegevoegd_door);
     }
     setFormulier(lege);
     setBewerkId(null);
@@ -62,11 +68,13 @@ export default function ContentKalender() {
   }
 
   async function handleVerwijder(id: number) {
+    const item = items.find((i) => i.id === id);
     await fetch("/api/content-kalender", {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id }),
     });
+    await logActie("verwijderd", "content_kalender", id, item?.titel || String(id));
     setItems((prev) => prev.filter((i) => i.id !== id));
   }
 
@@ -76,6 +84,7 @@ export default function ContentKalender() {
       status: item.status,
       publicatiedatum: item.publicatiedatum || "",
       categorie: item.categorie || "",
+      toegevoegd_door: "",
     });
     setBewerkId(item.id);
     setToonFormulier(true);
@@ -155,8 +164,11 @@ export default function ContentKalender() {
                 onChange={(e) => setFormulier((p) => ({ ...p, categorie: e.target.value }))}
               />
             </div>
+            <div className="col-span-2">
+              <PersoonSelector value={formulier.toegevoegd_door} onChange={(v) => setFormulier((p) => ({ ...p, toegevoegd_door: v }))} />
+            </div>
             <div className="col-span-2 flex gap-3">
-              <button type="submit" className="btn-primary">
+              <button type="submit" className="btn-primary" disabled={!formulier.toegevoegd_door}>
                 {bewerkId ? "Opslaan" : "Toevoegen"}
               </button>
               <button type="button" onClick={() => setToonFormulier(false)} className="btn-secondary">

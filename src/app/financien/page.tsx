@@ -4,6 +4,8 @@ import { useState, useEffect } from "react";
 import { CreditCard, User } from "lucide-react";
 import Tabs from "@/components/Tabs";
 import KpiCard from "@/components/KpiCard";
+import PersoonSelector, { type Persoon } from "@/components/PersoonSelector";
+import { logActie } from "@/lib/audit";
 import {
   BarChart,
   Bar,
@@ -35,7 +37,7 @@ interface Maanddata {
 const categorieenInkomsten = ["Affiliate", "Freelance", "Overig"];
 const categorieenUitgaven = ["Hosting", "Tools", "Marketing", "Overig"];
 
-const lege = { datum: new Date().toISOString().split("T")[0], bedrag: "", type: "inkomsten", categorie: "Affiliate", omschrijving: "", rekening: "", aftrekbaar: false };
+const lege = { datum: new Date().toISOString().split("T")[0], bedrag: "", type: "inkomsten", categorie: "Affiliate", omschrijving: "", rekening: "", aftrekbaar: false, toegevoegd_door: "" as Persoon | "" };
 
 function maandLabel(maand: string) {
   const [jaar, mnd] = maand.split("-");
@@ -67,22 +69,27 @@ export default function FinancienPage() {
 
   async function handleToevoegen(e: React.FormEvent) {
     e.preventDefault();
-    await fetch("/api/financien", {
+    if (!formulier.toegevoegd_door) return;
+    const res = await fetch("/api/financien", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ ...formulier, bedrag: parseFloat(formulier.bedrag) }),
     });
+    const json = await res.json();
+    await logActie("aangemaakt", "transacties", json.id ?? "", `${formulier.type} €${formulier.bedrag} - ${formulier.omschrijving || formulier.categorie}`, formulier.toegevoegd_door);
     setFormulier(lege);
     setToonFormulier(false);
     laad();
   }
 
   async function handleVerwijder(id: number) {
+    const t = transacties.find((x) => x.id === id);
     await fetch("/api/financien", {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id }),
     });
+    await logActie("verwijderd", "transacties", id, t?.omschrijving || t?.categorie || String(id));
     setTransacties((prev) => prev.filter((t) => t.id !== id));
     laad();
   }
@@ -269,8 +276,11 @@ export default function FinancienPage() {
                 </label>
               </div>
             )}
+            <div className="col-span-2">
+              <PersoonSelector value={formulier.toegevoegd_door} onChange={(v) => setFormulier((p) => ({ ...p, toegevoegd_door: v }))} />
+            </div>
             <div className="col-span-2 flex gap-3">
-              <button type="submit" className="btn-primary">Toevoegen</button>
+              <button type="submit" className="btn-primary" disabled={!formulier.toegevoegd_door}>Toevoegen</button>
               <button type="button" onClick={() => setToonFormulier(false)} className="btn-secondary">Annuleren</button>
             </div>
           </form>
@@ -356,7 +366,7 @@ function OnttrekkingenTab() {
   const [jaar, setJaar] = useState(new Date().getFullYear());
   const [loading, setLoading] = useState(true);
   const [toonFormulier, setToonFormulier] = useState(false);
-  const [form, setForm] = useState({ datum: new Date().toISOString().slice(0, 10), vennoot: "Luciano", bedrag: "", omschrijving: "" });
+  const [form, setForm] = useState({ datum: new Date().toISOString().slice(0, 10), vennoot: "Luciano", bedrag: "", omschrijving: "", toegevoegd_door: "" as Persoon | "" });
 
   const laad = async () => {
     setLoading(true);
@@ -370,22 +380,27 @@ function OnttrekkingenTab() {
 
   const toevoegen = async (e: React.FormEvent) => {
     e.preventDefault();
-    await fetch("/api/onttrekkingen", {
+    if (!form.toegevoegd_door) return;
+    const res = await fetch("/api/onttrekkingen", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ ...form, bedrag: parseFloat(form.bedrag) }),
     });
-    setForm({ datum: new Date().toISOString().slice(0, 10), vennoot: "Luciano", bedrag: "", omschrijving: "" });
+    const json = await res.json();
+    await logActie("aangemaakt", "onttrekkingen", json.id ?? "", `${form.vennoot} €${form.bedrag}`, form.toegevoegd_door);
+    setForm({ datum: new Date().toISOString().slice(0, 10), vennoot: "Luciano", bedrag: "", omschrijving: "", toegevoegd_door: "" });
     setToonFormulier(false);
     laad();
   };
 
   const verwijder = async (id: number) => {
+    const item = items.find((i) => i.id === id);
     await fetch("/api/onttrekkingen", {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id }),
     });
+    await logActie("verwijderd", "onttrekkingen", id, item?.vennoot ? `${item.vennoot} €${item.bedrag}` : String(id));
     laad();
   };
 
@@ -444,9 +459,12 @@ function OnttrekkingenTab() {
               <label className="label">Omschrijving (optioneel)</label>
               <input type="text" className="input" placeholder="bijv. maandelijkse opname" value={form.omschrijving} onChange={(e) => setForm({ ...form, omschrijving: e.target.value })} />
             </div>
+            <div className="col-span-2">
+              <PersoonSelector value={form.toegevoegd_door} onChange={(v) => setForm((p) => ({ ...p, toegevoegd_door: v }))} />
+            </div>
             <div className="col-span-2 flex gap-3 justify-end">
               <button type="button" onClick={() => setToonFormulier(false)} className="btn-secondary text-sm">Annuleren</button>
-              <button type="submit" className="btn-primary text-sm">Toevoegen</button>
+              <button type="submit" className="btn-primary text-sm" disabled={!form.toegevoegd_door}>Toevoegen</button>
             </div>
           </form>
         </div>

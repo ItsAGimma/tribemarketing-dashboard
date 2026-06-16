@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react";
 import KpiCard from "@/components/KpiCard";
+import PersoonSelector, { type Persoon } from "@/components/PersoonSelector";
+import { logActie } from "@/lib/audit";
 
 interface Rit {
   id: number;
@@ -32,6 +34,7 @@ export default function Kilometers() {
     naar: "",
     km: "",
     doel: "",
+    toegevoegd_door: "" as Persoon | "",
   });
 
   const laad = async () => {
@@ -46,13 +49,16 @@ export default function Kilometers() {
 
   const toevoegen = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!form.toegevoegd_door) return;
     setOpslaan(true);
-    await fetch("/api/belastingen/kilometers", {
+    const res = await fetch("/api/belastingen/kilometers", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ ...form, km: parseFloat(form.km) }),
     });
-    setForm({ datum: new Date().toISOString().slice(0, 10), van: "", naar: "", km: "", doel: "" });
+    const json = await res.json();
+    await logActie("aangemaakt", "kilometers", json.id ?? "", `${form.van} → ${form.naar} (${form.km} km)`, form.toegevoegd_door);
+    setForm({ datum: new Date().toISOString().slice(0, 10), van: "", naar: "", km: "", doel: "", toegevoegd_door: "" });
     setToonFormulier(false);
     setOpslaan(false);
     laad();
@@ -60,11 +66,13 @@ export default function Kilometers() {
 
   const verwijder = async (id: number) => {
     if (!confirm("Rit verwijderen?")) return;
+    const rit = data?.ritten.find((r) => r.id === id);
     await fetch("/api/belastingen/kilometers", {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id }),
     });
+    await logActie("verwijderd", "kilometers", id, rit ? `${rit.van} → ${rit.naar}` : String(id));
     laad();
   };
 
@@ -133,9 +141,12 @@ export default function Kilometers() {
                 <span className="font-semibold text-emerald-600">€{(parseFloat(form.km) * 0.23).toFixed(2)}</span>
               </div>
             )}
+            <div className="col-span-2">
+              <PersoonSelector value={form.toegevoegd_door} onChange={(v) => setForm((p) => ({ ...p, toegevoegd_door: v }))} />
+            </div>
             <div className="col-span-2 flex gap-3 justify-end">
               <button type="button" onClick={() => setToonFormulier(false)} className="btn-secondary text-sm">Annuleren</button>
-              <button type="submit" disabled={opslaan} className="btn-primary text-sm">{opslaan ? "Opslaan..." : "Toevoegen"}</button>
+              <button type="submit" disabled={opslaan || !form.toegevoegd_door} className="btn-primary text-sm">{opslaan ? "Opslaan..." : "Toevoegen"}</button>
             </div>
           </form>
         </div>
