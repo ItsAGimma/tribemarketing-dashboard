@@ -1,3 +1,6 @@
 .env*.local
 node_modules/
 .next/
+.DS_Store
+data/*.db
+tsconfig.tsbuildinfo
