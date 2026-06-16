@@ -80,7 +80,7 @@ export default function HomePage() {
       {/* Financiën KPIs */}
       <div>
         <p className="section-label mb-4">Deze maand</p>
-        <div className="grid grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
           <div className="card card-hover relative overflow-hidden" style={{ paddingTop: 24 }}>
             <div className="absolute top-0 left-0 right-0" style={{ height: 3, backgroundColor: "#2D6A4F" }} />
             <p className="card-title mb-2">Inkomsten</p>
@@ -103,7 +103,7 @@ export default function HomePage() {
       {/* Content & overige stats */}
       <div>
         <p className="section-label mb-4">Overzicht</p>
-        <div className="grid grid-cols-4 gap-5">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-5">
           {[
             { href: "/content", icon: Layout, label: "Gepubliceerd", value: content.gepubliceerd, sub: `${content.gepland} gepland · ${content.concept} concept` },
             { href: "/content", icon: Link2, label: "Affiliate links", value: affiliate.aantalLinks, sub: "actieve links" },
@@ -128,7 +128,7 @@ export default function HomePage() {
       </div>
 
       {/* Aankomende content + recente transacties */}
-      <div className="grid grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
         {/* Aankomende content */}
         <div className="card">
           <div className="flex items-center justify-between mb-5">
@@ -192,7 +192,7 @@ export default function HomePage() {
       {/* Snelkoppelingen */}
       <div>
         <p className="section-label mb-4">Snelkoppelingen</p>
-        <div className="grid grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           {[
             { href: "/content", label: "Content plannen", icon: CalendarPlus },
             { href: "/content?tab=zoekwoorden", label: "Zoekwoord zoeken", icon: Search },

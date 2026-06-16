@@ -111,7 +111,7 @@ export default function ZakelijkeKosten() {
       {toonFormulier && (
         <div className="card p-6">
           <h3 className="font-semibold text-[#0f172a] mb-4">Zakelijke kost toevoegen</h3>
-          <form onSubmit={toevoegen} className="grid grid-cols-2 gap-4">
+          <form onSubmit={toevoegen} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="label">Datum</label>
               <input type="date" className="input" value={form.datum} onChange={(e) => setForm({ ...form, datum: e.target.value })} required />

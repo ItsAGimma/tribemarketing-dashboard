@@ -116,7 +116,7 @@ export default function Facturen() {
         </button>
       </div>
 
-      <div className="grid grid-cols-3 gap-5">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
         <KpiCard label="Totaal betaald" value={`€${totaalBetaald.toFixed(2)}`} accent="#2D6A4F" />
         <KpiCard label="Openstaand" value={`€${totaalOpen.toFixed(2)}`} accent="#F59E0B" />
         <KpiCard label="Totaal facturen" value={String(facturen.length)} accent="#004BAD" />
@@ -125,7 +125,7 @@ export default function Facturen() {
       {toonFormulier && (
         <div className="card p-6">
           <h3 className="font-semibold text-[#0f172a] mb-4">Nieuwe factuur</h3>
-          <form onSubmit={toevoegen} className="grid grid-cols-2 gap-4">
+          <form onSubmit={toevoegen} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="label">Factuurnummer</label>
               <input type="text" className="input" placeholder="FAC-2026-001" value={form.factuurnummer} onChange={(e) => setForm({ ...form, factuurnummer: e.target.value })} required />

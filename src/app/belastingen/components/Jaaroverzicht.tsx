@@ -71,7 +71,7 @@ export default function Jaaroverzicht() {
         <div className="card p-8 text-center text-gray-400">Laden...</div>
       ) : !data ? null : (
         <>
-          <div className="grid grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             {/* Inkomsten & Uitgaven */}
             <div className="card divide-y divide-gray-50">
               <div className="px-4 py-3 bg-gray-50">

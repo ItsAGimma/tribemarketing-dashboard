@@ -135,7 +135,7 @@ export default function FinancienPage() {
       {actieveTab === "transacties" && (<>
 
       {/* KPI Kaarten */}
-      <div className="grid grid-cols-3 gap-5">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
         <KpiCard label="Totaal inkomsten" value={euroFormaat.format(totaalInkomsten)} accent="#2D6A4F" valueColor="#2D6A4F" />
         <KpiCard label="Totaal uitgaven" value={euroFormaat.format(totaalUitgaven)} accent="#E05252" valueColor="#E05252" />
         <KpiCard
@@ -190,7 +190,7 @@ export default function FinancienPage() {
         </div>
 
         {toonFormulier && (
-          <form onSubmit={handleToevoegen} className="grid grid-cols-2 gap-4 mb-6 p-4 bg-gray-50 rounded-xl">
+          <form onSubmit={handleToevoegen} className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6 p-4 bg-gray-50 rounded-xl">
             <div>
               <label className="label">Datum</label>
               <input
@@ -424,7 +424,7 @@ function OnttrekkingenTab() {
       </div>
 
       {/* KPI per vennoot */}
-      <div className="grid grid-cols-3 gap-5">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
         <KpiCard label="Luciano opgenomen" value={euroFormaat.format(totaalLuciano)} accent="#004BAD" />
         <KpiCard label="Jolien opgenomen" value={euroFormaat.format(totaalJolien)} accent="#7c3aed" />
         <KpiCard label="Totaal opgenomen" value={euroFormaat.format(totaal)} accent="#6B7280">
@@ -439,7 +439,7 @@ function OnttrekkingenTab() {
       {toonFormulier && (
         <div className="card p-6">
           <h3 className="font-semibold text-[#0f172a] mb-4">Onttrekking toevoegen</h3>
-          <form onSubmit={toevoegen} className="grid grid-cols-2 gap-4">
+          <form onSubmit={toevoegen} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="label">Datum</label>
               <input type="date" className="input" value={form.datum} onChange={(e) => setForm({ ...form, datum: e.target.value })} required />

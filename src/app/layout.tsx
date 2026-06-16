@@ -21,7 +21,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         ) : (
           <div className="flex min-h-screen">
             <Navigation />
-            <main className="flex-1 p-10 overflow-auto min-h-screen" style={{ backgroundColor: "#F5F4F0" }}>
+            <main className="flex-1 p-4 pt-20 md:p-10 overflow-auto min-h-screen" style={{ backgroundColor: "#F5F4F0" }}>
               {children}
             </main>
           </div>

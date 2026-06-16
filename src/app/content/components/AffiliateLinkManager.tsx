@@ -119,7 +119,7 @@ export default function AffiliateLinkManager() {
       {toonFormulier && (
         <div className="card border-2 border-brand-200">
           <h3 className="font-semibold text-[#0f172a] mb-4">Nieuwe affiliate link</h3>
-          <form onSubmit={handleOpslaan} className="grid grid-cols-2 gap-4">
+          <form onSubmit={handleOpslaan} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="label">Naam</label>
               <input type="text" className="input" placeholder="bijv. Booking.com partner" value={formulier.naam} onChange={(e) => setFormulier((p) => ({ ...p, naam: e.target.value }))} required />
@@ -152,7 +152,7 @@ export default function AffiliateLinkManager() {
       )}
 
       {/* Overzicht statistieken */}
-      <div className="grid grid-cols-3 gap-5">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
         <KpiCard label="Totaal links" value={String(links.length)} accent="#004BAD" />
         <KpiCard label="Gekoppelde artikelen" value={String(links.reduce((s, l) => s + l.artikelen.length, 0))} accent="#7c3aed" />
         <div className="card card-hover relative overflow-hidden" style={{ paddingTop: 24 }}>

@@ -125,7 +125,7 @@ export default function ZoekwoordenOnderzoek() {
         <div className="card border-l-4 border-l-brand-400 space-y-4">
           <h2 className="section-title mb-0">AI-analyse voor &ldquo;{huidigZoekwoord}&rdquo;</h2>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Zoekintentie</p>
               <p className="text-sm text-gray-700">{claudeAnalyse.zoekintentie}</p>

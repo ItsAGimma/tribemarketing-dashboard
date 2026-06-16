@@ -115,7 +115,7 @@ export default function BtwOverzicht() {
         <div className="card p-8 text-center text-gray-400">Laden...</div>
       ) : (
         <>
-          <div className="grid grid-cols-2 gap-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
             <KpiCard label={`Totale omzet ${jaar}`} value={`€${totaalOmzet.toFixed(2)}`} accent="#2D6A4F" />
             <KpiCard label="Totaal BTW afdragen" value={`€${totaalBtw.toFixed(2)}`} accent="#004BAD" />
           </div>

@@ -121,7 +121,7 @@ export default function ContentKalender() {
           <h3 className="font-semibold text-gray-800 mb-4">
             {bewerkId ? "Artikel bewerken" : "Nieuw artikel"}
           </h3>
-          <form onSubmit={handleOpslaan} className="grid grid-cols-2 gap-4">
+          <form onSubmit={handleOpslaan} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="col-span-2">
               <label className="label">Titel</label>
               <input

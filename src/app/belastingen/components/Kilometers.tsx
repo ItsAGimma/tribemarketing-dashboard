@@ -104,7 +104,7 @@ export default function Kilometers() {
       </div>
 
       {data && (
-        <div className="grid grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
           <KpiCard label={`Totaal km ${jaar}`} value={`${data.totaalKm} km`} accent="#004BAD" />
           <KpiCard label="Aftrekbaar" value={`€${data.totaalAftrekbaar.toFixed(2)}`} accent="#2D6A4F" />
           <KpiCard label="Aantal ritten" value={String(data.ritten.length)} accent="#7c3aed" />
@@ -114,7 +114,7 @@ export default function Kilometers() {
       {toonFormulier && (
         <div className="card p-6">
           <h3 className="font-semibold text-[#0f172a] mb-4">Rit toevoegen</h3>
-          <form onSubmit={toevoegen} className="grid grid-cols-2 gap-4">
+          <form onSubmit={toevoegen} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="label">Datum</label>
               <input type="date" className="input" value={form.datum} onChange={(e) => setForm({ ...form, datum: e.target.value })} required />
