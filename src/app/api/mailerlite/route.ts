@@ -8,7 +8,7 @@ export async function GET() {
   }
 
   try {
-    const res = await fetch("https://connect.mailerlite.com/api/stats", {
+    const res = await fetch("https://connect.mailerlite.com/api/subscribers?limit=1000", {
       headers: {
         Authorization: `Bearer ${apiKey}`,
         "Content-Type": "application/json",
@@ -22,14 +22,11 @@ export async function GET() {
       return NextResponse.json({ success: false, error: data.message || "MailerLite API fout" });
     }
 
-    console.log("[mailerlite] stats response:", JSON.stringify(data).slice(0, 500));
-
     return NextResponse.json({
       success: true,
       data: {
-        subscribers: data.data?.total_subscribers ?? data.data?.subscribers ?? 0,
+        subscribers: Array.isArray(data.data) ? data.data.length : 0,
       },
-      _debug: data.data,
     });
   } catch (error) {
     return NextResponse.json({ success: false, error: String(error) });
