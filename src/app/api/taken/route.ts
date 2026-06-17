@@ -22,12 +22,13 @@ export async function POST(req: NextRequest) {
 }
 
 export async function PATCH(req: NextRequest) {
-  const { id, voltooid, titel, deadline, geclaimd_door } = await req.json();
+  const { id, voltooid, titel, deadline, geclaimd_door, notitie } = await req.json();
   const update: Record<string, unknown> = {};
   if (voltooid !== undefined) update.voltooid = voltooid;
   if (titel !== undefined) update.titel = titel;
   if (deadline !== undefined) update.deadline = deadline || null;
   if (geclaimd_door !== undefined) update.geclaimd_door = geclaimd_door || null;
+  if (notitie !== undefined) update.notitie = notitie || null;
   const sb = getSupabase();
   const { error } = await sb.from("taken").update(update).eq("id", id);
   if (error) return NextResponse.json({ success: false, error: error.message }, { status: 500 });
