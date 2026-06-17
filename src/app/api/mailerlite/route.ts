@@ -22,11 +22,14 @@ export async function GET() {
       return NextResponse.json({ success: false, error: data.message || "MailerLite API fout" });
     }
 
+    console.log("[mailerlite] raw response:", JSON.stringify(data).slice(0, 500));
+
     return NextResponse.json({
       success: true,
       data: {
         subscribers: data.meta?.total ?? 0,
       },
+      _debug: { meta: data.meta, keys: Object.keys(data) },
     });
   } catch (error) {
     return NextResponse.json({ success: false, error: String(error) });
