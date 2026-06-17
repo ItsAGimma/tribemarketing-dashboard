@@ -97,7 +97,26 @@ export default function ZoekwoordenOnderzoek() {
 
   return (
     <div className="max-w-3xl space-y-6">
-      <form onSubmit={handleZoeken} className="card">
+      <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 flex items-start gap-3">
+        <span className="text-amber-500 text-lg shrink-0">🚧</span>
+        <div>
+          <p className="text-sm font-semibold text-amber-800">Tijdelijk niet beschikbaar</p>
+          <p className="text-sm text-amber-700 mt-0.5">
+            Deze functie is tijdelijk uitgeschakeld.{" "}
+            <a
+              href="https://claude.ai/public/artifacts/4163f548-6fe5-47ef-977e-684482ca2f49"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline font-medium hover:text-amber-900"
+            >
+              Gebruik deze versie in de tussentijd
+            </a>
+            .
+          </p>
+        </div>
+      </div>
+
+      <form onSubmit={handleZoeken} className="card opacity-50 pointer-events-none">
         <h2 className="section-title">Zoekwoordenonderzoek</h2>
         <div className="flex gap-3">
           <input
@@ -105,11 +124,10 @@ export default function ZoekwoordenOnderzoek() {
             className="input flex-1"
             placeholder="bijv. reizen thailand"
             value={invoer}
-            onChange={(e) => setInvoer(e.target.value)}
-            required
+            disabled
           />
-          <button type="submit" disabled={laden} className="btn-primary">
-            {laden ? "Zoeken..." : "Zoek"}
+          <button type="submit" disabled className="btn-primary">
+            Zoek
           </button>
         </div>
         <p className="text-xs text-gray-400 mt-2">
