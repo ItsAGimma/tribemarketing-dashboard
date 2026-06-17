@@ -14,6 +14,7 @@ import {
   CalendarPlus,
   Wallet,
   Mail,
+  CheckSquare,
 } from "lucide-react";
 
 interface DashboardData {
@@ -50,6 +51,7 @@ const maanden = ["jan", "feb", "mrt", "apr", "mei", "jun", "jul", "aug", "sep", 
 export default function HomePage() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [subscribers, setSubscribers] = useState<number | null>(null);
+  const [openTaken, setOpenTaken] = useState<{ id: number; titel: string }[]>([]);
   const nu = new Date();
 
   useEffect(() => {
@@ -59,6 +61,9 @@ export default function HomePage() {
     fetch("/api/mailerlite")
       .then((r) => r.json())
       .then((d) => { if (d.success) setSubscribers(d.data.subscribers); });
+    fetch("/api/taken")
+      .then((r) => r.json())
+      .then((d) => { if (d.success) setOpenTaken(d.data.filter((t: { voltooid: boolean }) => !t.voltooid).slice(0, 5)); });
   }, []);
 
   if (!data) {
@@ -204,6 +209,32 @@ export default function HomePage() {
             </div>
           )}
         </div>
+      </div>
+
+      {/* Openstaande taken */}
+      <div className="card">
+        <div className="flex items-center justify-between mb-5">
+          <h2 className="card-title mb-0">Openstaande taken</h2>
+          <Link href="/taken" className="inline-flex items-center gap-1 text-xs font-medium" style={{ color: "#004BAD" }}>
+            Alles <ArrowUpRight size={13} />
+          </Link>
+        </div>
+        {openTaken.length === 0 ? (
+          <p className="text-sm text-muted">Geen openstaande taken.</p>
+        ) : (
+          <div className="space-y-3">
+            {openTaken.map((taak) => (
+              <div key={taak.id} className="flex items-center gap-3">
+                <span className="shrink-0 w-4 h-4 rounded-full border-2 border-gray-300" />
+                <span className="text-sm text-ink">{taak.titel}</span>
+              </div>
+            ))}
+          </div>
+        )}
+        <Link href="/taken" className="mt-4 flex items-center gap-2 text-xs font-medium text-brand-600 hover:underline">
+          <CheckSquare size={13} />
+          Taken beheren
+        </Link>
       </div>
 
       {/* Snelkoppelingen */}
