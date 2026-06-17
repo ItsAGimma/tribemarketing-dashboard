@@ -245,7 +245,7 @@ export default function HomePage() {
             { href: "/content", label: "Content plannen", icon: CalendarPlus },
             { href: "/content?tab=zoekwoorden", label: "Zoekwoord zoeken", icon: Search },
             { href: "/financien", label: "Transactie toevoegen", icon: Wallet },
-            { href: "/content?tab=affiliate", label: "Affiliate link", icon: Link2 },
+            { href: "/platformen", label: "Affiliate link", icon: Link2 },
           ].map((link) => {
             const Icon = link.icon;
             return (

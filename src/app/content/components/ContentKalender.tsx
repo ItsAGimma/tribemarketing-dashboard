@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import PersoonSelector, { type Persoon } from "@/components/PersoonSelector";
+import { type Persoon } from "@/components/PersoonSelector";
 import { logActie } from "@/lib/audit";
 
 interface ContentItem {
@@ -79,23 +79,24 @@ export default function ContentKalender() {
   }
 
   function handleBewerk(item: ContentItem) {
-    setFormulier({
-      titel: item.titel,
-      status: item.status,
-      publicatiedatum: item.publicatiedatum || "",
-      categorie: item.categorie || "",
-      toegevoegd_door: "",
-    });
+    setFormulier({ titel: item.titel, status: item.status, publicatiedatum: item.publicatiedatum || "", categorie: item.categorie || "", toegevoegd_door: "" });
     setBewerkId(item.id);
     setToonFormulier(true);
+  }
+
+  function sluitModal() {
+    setToonFormulier(false);
+    setBewerkId(null);
+    setFormulier(lege);
   }
 
   const gefilterd = filter === "alle" ? items : items.filter((i) => i.status === filter);
 
   return (
+    <>
     <div className="max-w-4xl space-y-6">
       <div className="flex items-center justify-between">
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           {["alle", "idee", "in_bewerking", "gepubliceerd"].map((s) => (
             <button
               key={s}
@@ -105,9 +106,7 @@ export default function ContentKalender() {
               }`}
             >
               {s === "alle" ? "Alle" : statusLabel[s as keyof typeof statusLabel]}
-              <span className="ml-1.5 opacity-70">
-                ({s === "alle" ? items.length : items.filter((i) => i.status === s).length})
-              </span>
+              <span className="ml-1.5 opacity-60">({s === "alle" ? items.length : items.filter((i) => i.status === s).length})</span>
             </button>
           ))}
         </div>
@@ -116,69 +115,6 @@ export default function ContentKalender() {
         </button>
       </div>
 
-      {toonFormulier && (
-        <div className="card border-2 border-brand-200">
-          <h3 className="font-semibold text-gray-800 mb-4">
-            {bewerkId ? "Artikel bewerken" : "Nieuw artikel"}
-          </h3>
-          <form onSubmit={handleOpslaan} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="col-span-2">
-              <label className="label">Titel</label>
-              <input
-                type="text"
-                className="input"
-                placeholder="bijv. De beste stranden van Thailand"
-                value={formulier.titel}
-                onChange={(e) => setFormulier((p) => ({ ...p, titel: e.target.value }))}
-                required
-              />
-            </div>
-            <div>
-              <label className="label">Status</label>
-              <select
-                className="input"
-                value={formulier.status}
-                onChange={(e) => setFormulier((p) => ({ ...p, status: e.target.value }))}
-              >
-                <option value="idee">Idee</option>
-                <option value="in_bewerking">In bewerking</option>
-                <option value="gepubliceerd">Gepubliceerd</option>
-              </select>
-            </div>
-            <div>
-              <label className="label">Publicatiedatum</label>
-              <input
-                type="date"
-                className="input"
-                value={formulier.publicatiedatum}
-                onChange={(e) => setFormulier((p) => ({ ...p, publicatiedatum: e.target.value }))}
-              />
-            </div>
-            <div className="col-span-2">
-              <label className="label">Categorie</label>
-              <input
-                type="text"
-                className="input"
-                placeholder="bijv. Azië, Budget reizen, Tips"
-                value={formulier.categorie}
-                onChange={(e) => setFormulier((p) => ({ ...p, categorie: e.target.value }))}
-              />
-            </div>
-            <div className="col-span-2">
-              <PersoonSelector value={formulier.toegevoegd_door} onChange={(v) => setFormulier((p) => ({ ...p, toegevoegd_door: v }))} />
-            </div>
-            <div className="col-span-2 flex gap-3">
-              <button type="submit" className="btn-primary" disabled={!formulier.toegevoegd_door}>
-                {bewerkId ? "Opslaan" : "Toevoegen"}
-              </button>
-              <button type="button" onClick={() => setToonFormulier(false)} className="btn-secondary">
-                Annuleren
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
-
       <div className="card">
         {gefilterd.length === 0 ? (
           <p className="text-center text-gray-400 py-8">Geen artikelen gevonden.</p>
@@ -186,29 +122,21 @@ export default function ContentKalender() {
           <div className="divide-y divide-gray-50">
             {gefilterd.map((item) => (
               <div key={item.id} className="py-4 first:pt-0 last:pb-0 flex items-start justify-between gap-4">
-                <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-1">
-                    <span className={`badge ${statusKleur[item.status]}`}>
-                      {statusLabel[item.status]}
-                    </span>
-                    {item.categorie && (
-                      <span className="badge bg-brand-50 text-brand-600">{item.categorie}</span>
-                    )}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1 flex-wrap">
+                    <span className={`badge ${statusKleur[item.status]}`}>{statusLabel[item.status]}</span>
+                    {item.categorie && <span className="badge bg-brand-50 text-brand-600">{item.categorie}</span>}
                   </div>
-                  <p className="font-medium text-gray-900">{item.titel}</p>
+                  <p className="font-medium text-gray-900 truncate">{item.titel}</p>
                   {item.publicatiedatum && (
                     <p className="text-xs text-gray-400 mt-0.5">
-                      📅 {new Date(item.publicatiedatum).toLocaleDateString("nl-NL", { day: "numeric", month: "long", year: "numeric" })}
+                      {new Date(item.publicatiedatum).toLocaleDateString("nl-NL", { day: "numeric", month: "long", year: "numeric" })}
                     </p>
                   )}
                 </div>
-                <div className="flex gap-2">
-                  <button onClick={() => handleBewerk(item)} className="btn-secondary text-sm py-1">
-                    ✏️
-                  </button>
-                  <button onClick={() => handleVerwijder(item.id)} className="btn-danger text-sm py-1">
-                    🗑️
-                  </button>
+                <div className="flex items-center gap-1 shrink-0">
+                  <button onClick={() => handleBewerk(item)} className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors text-sm">✏️</button>
+                  <button onClick={() => handleVerwijder(item.id)} className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors text-sm">🗑️</button>
                 </div>
               </div>
             ))}
@@ -216,5 +144,49 @@ export default function ContentKalender() {
         )}
       </div>
     </div>
+
+    {/* Modal */}
+    {toonFormulier && (
+      <div className="fixed inset-0 z-[200] flex items-center justify-center p-4" style={{ backgroundColor: "rgba(0,0,0,0.5)" }} onClick={sluitModal}>
+        <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg p-6" onClick={(e) => e.stopPropagation()}>
+          <h3 className="font-semibold text-gray-800 mb-5">{bewerkId ? "Artikel bewerken" : "Nieuw artikel"}</h3>
+          <form onSubmit={handleOpslaan} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="col-span-2">
+              <label className="label">Titel <span className="text-red-400">*</span></label>
+              <input type="text" className="input" placeholder="bijv. De beste stranden van Thailand" value={formulier.titel} onChange={(e) => setFormulier((p) => ({ ...p, titel: e.target.value }))} required autoFocus />
+            </div>
+            <div>
+              <label className="label">Status</label>
+              <select className="input" value={formulier.status} onChange={(e) => setFormulier((p) => ({ ...p, status: e.target.value }))}>
+                <option value="idee">Idee</option>
+                <option value="in_bewerking">In bewerking</option>
+                <option value="gepubliceerd">Gepubliceerd</option>
+              </select>
+            </div>
+            <div>
+              <label className="label">Publicatiedatum</label>
+              <input type="date" className="input" value={formulier.publicatiedatum} onChange={(e) => setFormulier((p) => ({ ...p, publicatiedatum: e.target.value }))} />
+            </div>
+            <div className="col-span-2">
+              <label className="label">Categorie</label>
+              <input type="text" className="input" placeholder="bijv. Azië, Budget reizen, Tips" value={formulier.categorie} onChange={(e) => setFormulier((p) => ({ ...p, categorie: e.target.value }))} />
+            </div>
+            <div className="col-span-2">
+              <label className="label">Ingevoerd door <span className="text-red-400">*</span></label>
+              <select className="input" value={formulier.toegevoegd_door} onChange={(e) => setFormulier((p) => ({ ...p, toegevoegd_door: e.target.value as Persoon }))}>
+                <option value="">Selecteer persoon...</option>
+                <option value="Luciano">Luciano</option>
+                <option value="Jolien">Jolien</option>
+              </select>
+            </div>
+            <div className="col-span-2 flex gap-3 pt-1">
+              <button type="submit" className="btn-primary flex-1" disabled={!formulier.toegevoegd_door}>{bewerkId ? "Opslaan" : "Toevoegen"}</button>
+              <button type="button" onClick={sluitModal} className="btn-secondary flex-1">Annuleren</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    )}
+    </>
   );
 }
