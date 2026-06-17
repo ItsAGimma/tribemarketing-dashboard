@@ -17,6 +17,19 @@ const secties = [
     ],
   },
   {
+    titel: "MailerLite",
+    velden: [
+      {
+        sleutel: "mailerlite_api_key",
+        label: "MailerLite API Key",
+        placeholder: "eyJ...",
+        type: "password",
+        beschrijving: "Vereist voor het tonen van het aantal subscribers op het dashboard.",
+        link: "https://app.mailerlite.com/integrations/api",
+      },
+    ],
+  },
+  {
     titel: "SEO",
     velden: [
       {
