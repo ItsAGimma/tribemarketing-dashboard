@@ -115,7 +115,14 @@ export default function KluisPage() {
   async function laadEntries(key: CryptoKey) {
     const res = await fetch("/api/kluis/wachtwoorden");
     const json = await res.json();
-    if (json.success) setEntries(json.data);
+    if (json.success) {
+      setEntries(json.data);
+      const decrypted: Record<number, Onthuld> = {};
+      await Promise.all(json.data.map(async (entry: Entry) => {
+        decrypted[entry.id] = await decryptEntry(key, entry);
+      }));
+      setOnthuld(decrypted);
+    }
   }
 
   // ─── Setup ───────────────────────────────────────────────────────────────
@@ -284,17 +291,6 @@ export default function KluisPage() {
       ? await decryptRaw(key, entry.encrypted_notities, entry.notities_iv)
       : "";
     return { wachtwoord, gebruikersnaam, notities };
-  }
-
-  async function toggleOnthuld(entry: Entry) {
-    if (!masterKey) return;
-    if (onthuld[entry.id]) {
-      setOnthuld((prev) => { const n = { ...prev }; delete n[entry.id]; return n; });
-      setWachtwoordZichtbaar((prev) => { const n = { ...prev }; delete n[entry.id]; return n; });
-    } else {
-      const dec = await decryptEntry(masterKey, entry);
-      setOnthuld((prev) => ({ ...prev, [entry.id]: dec }));
-    }
   }
 
   async function kopieerNaarKlembord(text: string) {
@@ -519,17 +515,17 @@ export default function KluisPage() {
                     )}
                   </div>
 
-                  {dec ? (
+                  {dec && (
                     <div className="mt-1 space-y-1">
                       {dec.gebruikersnaam && (
                         <div className="flex items-center gap-2">
-                          <span className="text-xs text-muted w-20 shrink-0">Gebruikersnaam</span>
+                          <span className="text-xs text-muted w-24 shrink-0">Gebruikersnaam</span>
                           <span className="text-xs font-mono text-gray-700">{dec.gebruikersnaam}</span>
                           <button onClick={() => kopieerNaarKlembord(dec.gebruikersnaam)} className="text-gray-300 hover:text-brand-500 shrink-0"><Copy size={11} /></button>
                         </div>
                       )}
                       <div className="flex items-center gap-2">
-                        <span className="text-xs text-muted w-20 shrink-0">Wachtwoord</span>
+                        <span className="text-xs text-muted w-24 shrink-0">Wachtwoord</span>
                         <span className="text-xs font-mono text-gray-700">{ww ? dec.wachtwoord : "•".repeat(Math.min(dec.wachtwoord.length, 16))}</span>
                         <button onClick={() => setWachtwoordZichtbaar((p) => ({ ...p, [entry.id]: !ww }))} className="text-gray-300 hover:text-gray-600 shrink-0">
                           {ww ? <EyeOff size={12} /> : <Eye size={12} />}
@@ -538,24 +534,15 @@ export default function KluisPage() {
                       </div>
                       {dec.notities && (
                         <div className="flex items-start gap-2">
-                          <span className="text-xs text-muted w-20 shrink-0">Notities</span>
+                          <span className="text-xs text-muted w-24 shrink-0">Notities</span>
                           <span className="text-xs text-gray-600">{dec.notities}</span>
                         </div>
                       )}
                     </div>
-                  ) : (
-                    <p className="text-xs text-muted mt-0.5">{entry.url || "Klik op oog-icoon om te bekijken"}</p>
                   )}
                 </div>
 
                 <div className="flex items-center gap-1 shrink-0">
-                  <button
-                    onClick={() => toggleOnthuld(entry)}
-                    title={dec ? "Verbergen" : "Bekijken"}
-                    className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-50 transition-colors"
-                  >
-                    {dec ? <EyeOff size={16} /> : <Eye size={16} />}
-                  </button>
                   <button
                     onClick={() => openBewerken(entry)}
                     className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-50 transition-colors"
