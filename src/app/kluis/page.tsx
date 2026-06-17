@@ -307,6 +307,7 @@ export default function KluisPage() {
       pattern="[0-9]*"
       maxLength={6}
       autoFocus={autoFocus}
+      autoComplete="off"
       placeholder={placeholder}
       value={value}
       onChange={(e) => onChange(e.target.value.replace(/\D/g, ""))}
@@ -337,7 +338,7 @@ export default function KluisPage() {
             <p className="text-sm text-muted mt-1">Kies een pincode om je wachtwoorden te beveiligen.</p>
           </div>
 
-          <form onSubmit={handleSetup} className="card space-y-4">
+          <form onSubmit={handleSetup} autoComplete="off" className="card space-y-4">
             <div>
               <label className="label">Pincode</label>
               {pinInput(pin, setPin, "••••••", true)}
@@ -402,7 +403,7 @@ export default function KluisPage() {
             <p className="text-sm text-muted mt-1">Voer je pincode in om toegang te krijgen.</p>
           </div>
 
-          <form onSubmit={handleOntgrendel} className="card space-y-4">
+          <form onSubmit={handleOntgrendel} autoComplete="off" className="card space-y-4">
             <div>
               <label className="label">Pincode</label>
               {pinInput(pin, setPin, "••••••", true)}
@@ -433,7 +434,7 @@ export default function KluisPage() {
             <p className="text-sm text-muted mt-1">Voer je herstelcode in en stel een nieuwe pincode in.</p>
           </div>
 
-          <form onSubmit={handleHerstel} className="card space-y-4">
+          <form onSubmit={handleHerstel} autoComplete="off" className="card space-y-4">
             <div>
               <label className="label">Herstelcode</label>
               <input
@@ -581,7 +582,7 @@ export default function KluisPage() {
       <div className="fixed inset-0 z-[200] flex items-center justify-center p-4" style={{ backgroundColor: "rgba(0,0,0,0.5)" }} onClick={() => setToonModal(false)}>
         <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6" onClick={(e) => e.stopPropagation()}>
           <h3 className="font-semibold text-gray-800 mb-5">{bewerkId ? "Wachtwoord bewerken" : "Nieuw wachtwoord"}</h3>
-          <form onSubmit={handleOpslaan} className="space-y-4">
+          <form onSubmit={handleOpslaan} autoComplete="off" className="space-y-4">
             <div>
               <label className="label">Naam <span className="text-red-400">*</span></label>
               <input type="text" className="input" placeholder="bijv. Gmail, Bol.com" value={form.naam} onChange={(e) => setForm((p) => ({ ...p, naam: e.target.value }))} required autoFocus />
