@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
+import { getSetting } from "@/lib/db";
 
 export async function GET() {
-  const apiKey = process.env.MAILERLITE_API_KEY;
+  const apiKey = process.env.MAILERLITE_API_KEY || await getSetting("mailerlite_api_key");
   if (!apiKey) {
     return NextResponse.json({ success: false, error: "MAILERLITE_API_KEY niet ingesteld" });
   }

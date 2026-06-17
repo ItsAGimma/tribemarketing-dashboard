@@ -15,6 +15,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const keys = [
       "claude_api_key",
+      "mailerlite_api_key",
       "pagespeed_api_key",
       "pinterest_client_id",
       "pinterest_client_secret",
