@@ -579,7 +579,7 @@ export default function KluisPage() {
             </div>
             <div>
               <label className="label">Gebruikersnaam / e-mail</label>
-              <input type="text" className="input" placeholder="gebruiker@voorbeeld.nl" value={form.gebruikersnaam} onChange={(e) => setForm((p) => ({ ...p, gebruikersnaam: e.target.value }))} />
+              <input type="text" className="input" placeholder="gebruiker@voorbeeld.nl" autoComplete="off" value={form.gebruikersnaam} onChange={(e) => setForm((p) => ({ ...p, gebruikersnaam: e.target.value }))} />
             </div>
             <div>
               <label className="label">Wachtwoord <span className="text-red-400">*</span></label>
@@ -588,6 +588,7 @@ export default function KluisPage() {
                   type={formWachtwoordZichtbaar ? "text" : "password"}
                   className="input pr-10"
                   placeholder="••••••••"
+                  autoComplete="new-password"
                   value={form.wachtwoord}
                   onChange={(e) => setForm((p) => ({ ...p, wachtwoord: e.target.value }))}
                   required
