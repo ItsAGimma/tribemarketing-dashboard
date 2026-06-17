@@ -26,6 +26,7 @@ interface Transactie {
   omschrijving: string | null;
   rekening: string | null;
   aftrekbaar: number;
+  platform: string | null;
 }
 
 interface Maanddata {
@@ -34,10 +35,10 @@ interface Maanddata {
   uitgaven: number;
 }
 
-const categorieenInkomsten = ["Affiliate", "Freelance", "Overig"];
+const categorieenInkomsten = ["Affiliate", "Overig"];
 const categorieenUitgaven = ["Hosting", "Tools", "Marketing", "Overig"];
 
-const lege = { datum: new Date().toISOString().split("T")[0], bedrag: "", type: "inkomsten", categorie: "Affiliate", omschrijving: "", rekening: "", aftrekbaar: false, toegevoegd_door: "" as Persoon | "" };
+const lege = { datum: new Date().toISOString().split("T")[0], bedrag: "", type: "inkomsten", categorie: "Affiliate", omschrijving: "", rekening: "", aftrekbaar: false, toegevoegd_door: "" as Persoon | "", platform: "" };
 
 function maandLabel(maand: string) {
   const [jaar, mnd] = maand.split("-");
@@ -53,8 +54,15 @@ export default function FinancienPage() {
   const [formulier, setFormulier] = useState(lege);
   const [toonFormulier, setToonFormulier] = useState(false);
   const [filterMaand, setFilterMaand] = useState<string>("alle");
+  const [filterPlatform, setFilterPlatform] = useState<string>("alle");
+  const [platforms, setPlatforms] = useState<{ id: number; naam: string }[]>([]);
 
-  useEffect(() => { laad(); }, []);
+  useEffect(() => {
+    laad();
+    fetch("/api/affiliate-platforms")
+      .then((r) => r.json())
+      .then((d) => { if (d.success) setPlatforms(d.data.filter((p: { actief: boolean }) => p.actief)); });
+  }, []);
 
   async function laad() {
     const [tRes, mRes] = await Promise.all([
@@ -70,6 +78,8 @@ export default function FinancienPage() {
   async function handleToevoegen(e: React.FormEvent) {
     e.preventDefault();
     if (!formulier.toegevoegd_door) return;
+    if (formulier.type === "inkomsten" && formulier.categorie === "Affiliate" && !formulier.platform) return;
+    if (!formulier.omschrijving.trim()) return;
     const res = await fetch("/api/financien", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -100,21 +110,27 @@ export default function FinancienPage() {
   const winst = totaalInkomsten - totaalUitgaven;
 
   // Gefilterde transacties
-  const gefilterd = filterMaand === "alle"
-    ? transacties
-    : transacties.filter((t) => t.datum.startsWith(filterMaand));
+  const gefilterd = transacties
+    .filter((t) => filterMaand === "alle" || t.datum.startsWith(filterMaand))
+    .filter((t) => filterPlatform === "alle" || t.platform === filterPlatform);
 
   // Unieke maanden voor filter
   const uniekeMaanden = [...new Set(transacties.map((t) => t.datum.slice(0, 7)))].sort().reverse();
 
   const categorieenActueel = formulier.type === "inkomsten" ? categorieenInkomsten : categorieenUitgaven;
 
-  const grafiekData = maanddata.map((m) => ({
-    naam: maandLabel(m.maand),
-    Inkomsten: m.inkomsten,
-    Uitgaven: m.uitgaven,
-    Winst: m.inkomsten - m.uitgaven,
-  }));
+  const grafiekBron = filterPlatform === "alle"
+    ? transacties
+    : transacties.filter((t) => t.type === "uitgaven" || t.platform === filterPlatform);
+  const grafiekPerMaand: Record<string, { inkomsten: number; uitgaven: number }> = {};
+  for (const t of grafiekBron) {
+    const m = t.datum.slice(0, 7);
+    if (!grafiekPerMaand[m]) grafiekPerMaand[m] = { inkomsten: 0, uitgaven: 0 };
+    grafiekPerMaand[m][t.type] += t.bedrag;
+  }
+  const grafiekData = Object.entries(grafiekPerMaand)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([m, d]) => ({ naam: maandLabel(m), Inkomsten: d.inkomsten, Uitgaven: d.uitgaven, Winst: d.inkomsten - d.uitgaven }));
 
   const [actieveTab, setActieveTab] = useState<"transacties" | "onttrekkingen">("transacties");
 
@@ -169,7 +185,7 @@ export default function FinancienPage() {
       {/* Transacties */}
       <div className="card">
         <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3 flex-wrap">
             <h2 className="section-title mb-0">Transacties</h2>
             <select
               className="input w-auto text-sm"
@@ -178,113 +194,27 @@ export default function FinancienPage() {
             >
               <option value="alle">Alle maanden</option>
               {uniekeMaanden.map((m) => (
-                <option key={m} value={m}>
-                  {maandLabel(m)}
-                </option>
+                <option key={m} value={m}>{maandLabel(m)}</option>
               ))}
             </select>
+            {platforms.length > 0 && (
+              <select
+                className="input w-auto text-sm"
+                value={filterPlatform}
+                onChange={(e) => setFilterPlatform(e.target.value)}
+              >
+                <option value="alle">Alle platforms</option>
+                {platforms.map((p) => (
+                  <option key={p.id} value={p.naam}>{p.naam}</option>
+                ))}
+              </select>
+            )}
           </div>
           <button onClick={() => setToonFormulier(true)} className="btn-primary">
             + Toevoegen
           </button>
         </div>
 
-        {toonFormulier && (
-          <form onSubmit={handleToevoegen} className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6 p-4 bg-gray-50 rounded-xl">
-            <div>
-              <label className="label">Datum</label>
-              <input
-                type="date"
-                className="input"
-                value={formulier.datum}
-                onChange={(e) => setFormulier((p) => ({ ...p, datum: e.target.value }))}
-                required
-              />
-            </div>
-            <div>
-              <label className="label">Bedrag (€)</label>
-              <input
-                type="number"
-                step="0.01"
-                min="0"
-                className="input"
-                placeholder="0,00"
-                value={formulier.bedrag}
-                onChange={(e) => setFormulier((p) => ({ ...p, bedrag: e.target.value }))}
-                required
-              />
-            </div>
-            <div>
-              <label className="label">Type</label>
-              <select
-                className="input"
-                value={formulier.type}
-                onChange={(e) => setFormulier((p) => ({ ...p, type: e.target.value, categorie: e.target.value === "inkomsten" ? "Affiliate" : "Hosting" }))}
-              >
-                <option value="inkomsten">Inkomsten</option>
-                <option value="uitgaven">Uitgaven</option>
-              </select>
-            </div>
-            <div>
-              <label className="label">Categorie</label>
-              <select
-                className="input"
-                value={formulier.categorie}
-                onChange={(e) => setFormulier((p) => ({ ...p, categorie: e.target.value }))}
-              >
-                {categorieenActueel.map((c) => (
-                  <option key={c} value={c}>{c}</option>
-                ))}
-              </select>
-            </div>
-            <div className={formulier.type === "uitgaven" ? "" : "col-span-2"}>
-              <label className="label">Omschrijving</label>
-              <input
-                type="text"
-                className="input"
-                placeholder="bijv. Booking.com commissie januari"
-                value={formulier.omschrijving}
-                onChange={(e) => setFormulier((p) => ({ ...p, omschrijving: e.target.value }))}
-              />
-            </div>
-            {formulier.type === "uitgaven" && (
-              <div>
-                <label className="label">Betaald via</label>
-                <select
-                  className="input"
-                  value={formulier.rekening}
-                  onChange={(e) => setFormulier((p) => ({ ...p, rekening: e.target.value }))}
-                  required
-                >
-                  <option value="">Kies rekening...</option>
-                  <option value="bedrijfsrekening">Bedrijfsrekening</option>
-                  <option value="persoonlijke rekening">Persoonlijke rekening</option>
-                </select>
-              </div>
-            )}
-            {formulier.type === "uitgaven" && (
-              <div className="col-span-2 flex items-center gap-3 py-1">
-                <input
-                  type="checkbox"
-                  id="aftrekbaar"
-                  checked={formulier.aftrekbaar}
-                  onChange={(e) => setFormulier((p) => ({ ...p, aftrekbaar: e.target.checked }))}
-                  className="w-4 h-4 accent-brand-600 rounded"
-                />
-                <label htmlFor="aftrekbaar" className="text-sm font-medium text-gray-700 cursor-pointer">
-                  Zakelijk aftrekbaar <span className="text-gray-400 font-normal">(telt mee in jaaroverzicht belastingen)</span>
-                </label>
-              </div>
-            )}
-            <div className="col-span-2">
-              <PersoonSelector value={formulier.toegevoegd_door} onChange={(v) => setFormulier((p) => ({ ...p, toegevoegd_door: v }))} />
-            </div>
-            <div className="col-span-2 flex gap-3">
-              <button type="submit" className="btn-primary" disabled={!formulier.toegevoegd_door}>Toevoegen</button>
-              <button type="button" onClick={() => setToonFormulier(false)} className="btn-secondary">Annuleren</button>
-            </div>
-          </form>
-        )}
 
         {gefilterd.length === 0 ? (
           <p className="text-center text-gray-400 py-8">Geen transacties gevonden.</p>
@@ -295,6 +225,7 @@ export default function FinancienPage() {
                 <tr className="text-left border-b border-gray-100">
                   <th className="pb-3 font-semibold text-gray-600">Datum</th>
                   <th className="pb-3 font-semibold text-gray-600">Omschrijving</th>
+                  <th className="pb-3 font-semibold text-gray-600">Platform</th>
                   <th className="pb-3 font-semibold text-gray-600">Categorie</th>
                   <th className="pb-3 font-semibold text-gray-600">Rekening</th>
                   <th className="pb-3 font-semibold text-gray-600">Aftrekbaar</th>
@@ -309,6 +240,13 @@ export default function FinancienPage() {
                       {new Date(t.datum).toLocaleDateString("nl-NL", { day: "numeric", month: "short" })}
                     </td>
                     <td className="py-3 text-gray-900">{t.omschrijving || "—"}</td>
+                    <td className="py-3">
+                      {t.platform ? (
+                        <span className="badge bg-brand-50 text-brand-700">{t.platform}</span>
+                      ) : (
+                        <span className="text-gray-300">—</span>
+                      )}
+                    </td>
                     <td className="py-3">
                       <span className="badge bg-gray-100 text-gray-600">{t.categorie}</span>
                     </td>
@@ -346,6 +284,90 @@ export default function FinancienPage() {
           </div>
         )}
       </div>
+
+      {toonFormulier && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4" style={{ backgroundColor: "rgba(0,0,0,0.5)" }} onClick={() => setToonFormulier(false)}>
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg p-6" onClick={(e) => e.stopPropagation()}>
+            <h3 className="font-semibold text-gray-800 mb-5">Transactie toevoegen</h3>
+            <form onSubmit={handleToevoegen} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="label">Datum</label>
+                <input type="date" className="input" value={formulier.datum} onChange={(e) => setFormulier((p) => ({ ...p, datum: e.target.value }))} required />
+              </div>
+              <div>
+                <label className="label">Bedrag (€)</label>
+                <input type="number" step="0.01" min="0" className="input" placeholder="0,00" value={formulier.bedrag} onChange={(e) => setFormulier((p) => ({ ...p, bedrag: e.target.value }))} required />
+              </div>
+              <div>
+                <label className="label">Type</label>
+                <select className="input" value={formulier.type} onChange={(e) => setFormulier((p) => ({ ...p, type: e.target.value, categorie: e.target.value === "inkomsten" ? "Affiliate" : "Hosting", platform: "" }))}>
+                  <option value="inkomsten">Inkomsten</option>
+                  <option value="uitgaven">Uitgaven</option>
+                </select>
+              </div>
+              <div>
+                <label className="label">Categorie</label>
+                <select className="input" value={formulier.categorie} onChange={(e) => setFormulier((p) => ({ ...p, categorie: e.target.value, platform: "" }))}>
+                  {categorieenActueel.map((c) => <option key={c} value={c}>{c}</option>)}
+                </select>
+              </div>
+              <div className="col-span-2">
+                <label className="label">Omschrijving <span className="text-red-400">*</span></label>
+                <input type="text" className="input" placeholder="bijv. Booking.com commissie januari" value={formulier.omschrijving} onChange={(e) => setFormulier((p) => ({ ...p, omschrijving: e.target.value }))} required />
+              </div>
+              {formulier.type === "inkomsten" && formulier.categorie === "Affiliate" && (
+                <div className="col-span-2">
+                  <label className="label">Affiliate platform <span className="text-red-400">*</span></label>
+                  {platforms.length === 0 ? (
+                    <p className="text-sm text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                      Geen actieve platforms. <a href="/platformen" className="underline font-medium">Voeg er eerst een toe →</a>
+                    </p>
+                  ) : (
+                    <select className="input" value={formulier.platform} onChange={(e) => setFormulier((p) => ({ ...p, platform: e.target.value }))} required>
+                      <option value="">Selecteer platform...</option>
+                      {platforms.map((p) => <option key={p.id} value={p.naam}>{p.naam}</option>)}
+                    </select>
+                  )}
+                </div>
+              )}
+              {formulier.type === "uitgaven" && (
+                <div>
+                  <label className="label">Betaald via</label>
+                  <select className="input" value={formulier.rekening} onChange={(e) => setFormulier((p) => ({ ...p, rekening: e.target.value }))} required>
+                    <option value="">Kies rekening...</option>
+                    <option value="bedrijfsrekening">Bedrijfsrekening</option>
+                    <option value="persoonlijke rekening">Persoonlijke rekening</option>
+                  </select>
+                </div>
+              )}
+              {formulier.type === "uitgaven" && (
+                <div className="col-span-2 flex items-center gap-3 py-1">
+                  <input type="checkbox" id="aftrekbaar" checked={formulier.aftrekbaar} onChange={(e) => setFormulier((p) => ({ ...p, aftrekbaar: e.target.checked }))} className="w-4 h-4 accent-brand-600 rounded" />
+                  <label htmlFor="aftrekbaar" className="text-sm font-medium text-gray-700 cursor-pointer">
+                    Zakelijk aftrekbaar <span className="text-gray-400 font-normal">(telt mee in jaaroverzicht belastingen)</span>
+                  </label>
+                </div>
+              )}
+              <div className="col-span-2">
+                <label className="label">Ingevoerd door <span className="text-red-400">*</span></label>
+                <select className="input" value={formulier.toegevoegd_door} onChange={(e) => setFormulier((p) => ({ ...p, toegevoegd_door: e.target.value as "Luciano" | "Jolien" }))}>
+                  <option value="">Selecteer persoon...</option>
+                  <option value="Luciano">Luciano</option>
+                  <option value="Jolien">Jolien</option>
+                </select>
+              </div>
+              <div className="col-span-2 flex gap-3 pt-1">
+                <button type="submit" className="btn-primary flex-1" disabled={
+                  !formulier.toegevoegd_door ||
+                  !formulier.omschrijving.trim() ||
+                  (formulier.type === "inkomsten" && formulier.categorie === "Affiliate" && !formulier.platform)
+                }>Toevoegen</button>
+                <button type="button" onClick={() => setToonFormulier(false)} className="btn-secondary flex-1">Annuleren</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
       </>)}
     </div>
   );
@@ -460,7 +482,12 @@ function OnttrekkingenTab() {
               <input type="text" className="input" placeholder="bijv. maandelijkse opname" value={form.omschrijving} onChange={(e) => setForm({ ...form, omschrijving: e.target.value })} />
             </div>
             <div className="col-span-2">
-              <PersoonSelector value={form.toegevoegd_door} onChange={(v) => setForm((p) => ({ ...p, toegevoegd_door: v }))} />
+              <label className="label">Ingevoerd door <span className="text-red-400">*</span></label>
+              <select className="input" value={form.toegevoegd_door} onChange={(e) => setForm((p) => ({ ...p, toegevoegd_door: e.target.value as "Luciano" | "Jolien" }))}>
+                <option value="">Selecteer persoon...</option>
+                <option value="Luciano">Luciano</option>
+                <option value="Jolien">Jolien</option>
+              </select>
             </div>
             <div className="col-span-2 flex gap-3 justify-end">
               <button type="button" onClick={() => setToonFormulier(false)} className="btn-secondary text-sm">Annuleren</button>
