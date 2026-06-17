@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Trash2, Pause, Play, ExternalLink } from "lucide-react";
+import { logActie } from "@/lib/audit";
 
 interface Platform {
   id: number;
@@ -31,7 +32,7 @@ export default function AffiliatePlatforms() {
     e.preventDefault();
     setOpslaan(true);
     try {
-      await fetch("/api/affiliate-platforms", {
+      const res = await fetch("/api/affiliate-platforms", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -40,6 +41,8 @@ export default function AffiliatePlatforms() {
           commissie_percentage: formulier.commissie_percentage ? parseFloat(formulier.commissie_percentage) : null,
         }),
       });
+      const json = await res.json();
+      await logActie("aangemaakt", "affiliate_platforms", json.data?.id ?? "", formulier.naam);
       setFormulier(leeg);
       setToonFormulier(false);
       await laad();
@@ -49,21 +52,25 @@ export default function AffiliatePlatforms() {
   }
 
   async function handleToggle(platform: Platform) {
-    setPlatforms((prev) => prev.map((p) => p.id === platform.id ? { ...p, actief: !p.actief } : p));
+    const wordtActief = !platform.actief;
+    setPlatforms((prev) => prev.map((p) => p.id === platform.id ? { ...p, actief: wordtActief } : p));
     await fetch("/api/affiliate-platforms", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id: platform.id, actief: !platform.actief }),
+      body: JSON.stringify({ id: platform.id, actief: wordtActief }),
     });
+    await logActie("bewerkt", "affiliate_platforms", platform.id, `${platform.naam} — ${wordtActief ? "geactiveerd" : "gepauzeerd"}`);
   }
 
   async function handleVerwijder(id: number) {
+    const platform = platforms.find((p) => p.id === id);
     setPlatforms((prev) => prev.filter((p) => p.id !== id));
     await fetch("/api/affiliate-platforms", {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id }),
     });
+    await logActie("verwijderd", "affiliate_platforms", id, platform?.naam || String(id));
   }
 
   const actief = platforms.filter((p) => p.actief);

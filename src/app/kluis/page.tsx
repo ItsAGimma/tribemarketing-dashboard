@@ -7,6 +7,7 @@ import {
   deriveKey, generateMasterKey, exportKey, importKey,
   encryptRaw, decryptRaw, generateRecoveryCode,
 } from "@/lib/kluis-crypto";
+import { logActie } from "@/lib/audit";
 
 type Status = "laden" | "setup" | "vergrendeld" | "herstel" | "ontgrendeld";
 
@@ -265,8 +266,11 @@ export default function KluisPage() {
       if (bewerkId) {
         await fetch("/api/kluis/wachtwoorden", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: bewerkId, ...body }) });
         setOnthuld((prev) => { const n = { ...prev }; delete n[bewerkId]; return n; });
+        await logActie("bewerkt", "kluis", bewerkId, form.naam);
       } else {
-        await fetch("/api/kluis/wachtwoorden", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+        const res = await fetch("/api/kluis/wachtwoorden", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+        const json = await res.json();
+        await logActie("aangemaakt", "kluis", json.id ?? "", form.naam);
       }
 
       setToonModal(false);
@@ -279,7 +283,9 @@ export default function KluisPage() {
 
   async function handleVerwijder(id: number) {
     if (!confirm("Dit wachtwoord permanent verwijderen?")) return;
+    const entry = entries.find((e) => e.id === id);
     await fetch("/api/kluis/wachtwoorden", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id }) });
+    await logActie("verwijderd", "kluis", id, entry?.naam || String(id));
     setEntries((prev) => prev.filter((e) => e.id !== id));
     setOnthuld((prev) => { const n = { ...prev }; delete n[id]; return n; });
   }

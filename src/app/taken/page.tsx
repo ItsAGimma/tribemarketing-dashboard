@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import { Trash2, Pencil, Clock, Tag } from "lucide-react";
+import { logActie } from "@/lib/audit";
 
 const PERSONEN = ["Luciano", "Jolien"] as const;
 
@@ -44,11 +45,13 @@ export default function TakenPage() {
     if (!nieuw.trim() || laden) return;
     setLaden(true);
     try {
-      await fetch("/api/taken", {
+      const res = await fetch("/api/taken", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ titel: nieuw }),
       });
+      const json = await res.json();
+      await logActie("aangemaakt", "taken", json.data?.id ?? "", nieuw);
       setNieuw("");
       await laad();
     } finally {
@@ -58,16 +61,19 @@ export default function TakenPage() {
   }
 
   async function handleToggle(taak: Taak) {
-    setTaken((prev) => prev.map((t) => t.id === taak.id ? { ...t, voltooid: !t.voltooid } : t));
+    const wordtVoltooid = !taak.voltooid;
+    setTaken((prev) => prev.map((t) => t.id === taak.id ? { ...t, voltooid: wordtVoltooid } : t));
     await fetch("/api/taken", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id: taak.id, voltooid: !taak.voltooid }),
+      body: JSON.stringify({ id: taak.id, voltooid: wordtVoltooid }),
     });
+    await logActie(wordtVoltooid ? "bewerkt" : "bewerkt", "taken", taak.id, `${taak.titel} — ${wordtVoltooid ? "voltooid" : "heropend"}`);
     await laad();
   }
 
   async function handleVerwijder(id: number) {
+    const taak = taken.find((t) => t.id === id);
     setTaken((prev) => prev.filter((t) => t.id !== id));
     setEdit(null);
     await fetch("/api/taken", {
@@ -75,6 +81,7 @@ export default function TakenPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id }),
     });
+    await logActie("verwijderd", "taken", id, taak?.titel || String(id));
   }
 
   async function handleOpslaan() {
@@ -90,6 +97,7 @@ export default function TakenPage() {
         notitie: edit.notitie || null,
       }),
     });
+    await logActie("bewerkt", "taken", edit.id, edit.titel, edit.geclaimd_door || undefined);
     setEdit(null);
     await laad();
   }
