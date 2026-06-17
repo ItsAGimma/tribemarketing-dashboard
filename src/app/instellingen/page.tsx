@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import PersoonSelector, { type Persoon } from "@/components/PersoonSelector";
 import { logActie } from "@/lib/audit";
 
 const secties = [
@@ -122,7 +121,6 @@ const secties = [
 
 export default function InstellingenPage() {
   const [waarden, setWaarden] = useState<Record<string, string>>({});
-  const [door, setDoor] = useState<Persoon | "">("");
   const [opslaan, setOpslaan] = useState(false);
   const [melding, setMelding] = useState<string | null>(null);
 
@@ -143,7 +141,7 @@ export default function InstellingenPage() {
       });
       const data = await res.json();
       if (data.success) {
-        await logActie("bewerkt", "instellingen", "settings", "Instellingen bijgewerkt", door || undefined);
+        await logActie("bewerkt", "instellingen", "settings", "Instellingen bijgewerkt");
         setMelding("✅ Instellingen opgeslagen!");
       } else {
         setMelding("❌ Er ging iets mis.");
@@ -198,17 +196,13 @@ export default function InstellingenPage() {
           </div>
         ))}
 
-        <div className="card">
-          <PersoonSelector value={door} onChange={setDoor} />
-        </div>
-
         {melding && (
           <div className="p-3 rounded-lg bg-green-50 border border-green-200 text-sm text-green-700">
             {melding}
           </div>
         )}
 
-        <button type="submit" disabled={opslaan || !door} className="btn-primary w-full">
+        <button type="submit" disabled={opslaan} className="btn-primary w-full">
           {opslaan ? "Opslaan..." : "Instellingen opslaan"}
         </button>
       </form>

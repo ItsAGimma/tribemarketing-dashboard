@@ -8,7 +8,7 @@ export async function GET() {
   }
 
   try {
-    const res = await fetch("https://connect.mailerlite.com/api/subscribers?limit=1&filter[status]=active", {
+    const res = await fetch("https://connect.mailerlite.com/api/subscribers?limit=1", {
       headers: {
         Authorization: `Bearer ${apiKey}`,
         "Content-Type": "application/json",

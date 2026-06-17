@@ -18,7 +18,7 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   try {
     const { actie, tabel, record_id, omschrijving, door } = await req.json();
-    if (!actie || !tabel || !door) {
+    if (!actie || !tabel) {
       return NextResponse.json({ success: false, error: "Verplichte velden ontbreken" }, { status: 400 });
     }
     const sb = getSupabase();
