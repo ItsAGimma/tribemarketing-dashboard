@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Eye, EyeOff, Copy, Plus, Trash2, Lock, Shield, KeyRound, ExternalLink, Pencil, Check } from "lucide-react";
+import { Eye, EyeOff, Copy, Plus, Trash2, Lock, Shield, KeyRound, ExternalLink, Pencil, Check, Search } from "lucide-react";
 import {
   bufferToBase64, base64ToBuffer, randomBuffer,
   deriveKey, generateMasterKey, exportKey, importKey,
@@ -60,6 +60,8 @@ export default function KluisPage() {
   const [herstelCodeWeergave, setHerstelCodeWeergave] = useState("");
   const [toonHerstelModal, setToonHerstelModal] = useState(false);
   const [herstelCodeGekopieerd, setHerstelCodeGekopieerd] = useState(false);
+
+  const [zoekterm, setZoekterm] = useState("");
 
   // Entry modal
   const [toonModal, setToonModal] = useState(false);
@@ -485,6 +487,17 @@ export default function KluisPage() {
         </div>
       </div>
 
+      <div className="relative">
+        <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+        <input
+          type="text"
+          className="input pl-9"
+          placeholder="Zoeken op naam..."
+          value={zoekterm}
+          onChange={(e) => setZoekterm(e.target.value)}
+        />
+      </div>
+
       {entries.length === 0 && (
         <div className="card py-16 text-center">
           <Shield size={32} className="mx-auto text-gray-200 mb-3" />
@@ -494,7 +507,7 @@ export default function KluisPage() {
       )}
 
       <div className="space-y-3">
-        {entries.map((entry) => {
+        {entries.filter((e) => e.naam.toLowerCase().includes(zoekterm.toLowerCase())).map((entry) => {
           const dec = onthuld[entry.id];
           const ww = wachtwoordZichtbaar[entry.id];
           return (
