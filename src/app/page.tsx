@@ -13,6 +13,7 @@ import {
   ArrowUpRight,
   CalendarPlus,
   Wallet,
+  Mail,
 } from "lucide-react";
 
 interface DashboardData {
@@ -48,12 +49,16 @@ const maanden = ["jan", "feb", "mrt", "apr", "mei", "jun", "jul", "aug", "sep", 
 
 export default function HomePage() {
   const [data, setData] = useState<DashboardData | null>(null);
+  const [subscribers, setSubscribers] = useState<number | null>(null);
   const nu = new Date();
 
   useEffect(() => {
     fetch("/api/dashboard")
       .then((r) => r.json())
       .then((d) => { if (d.success) setData(d.data); });
+    fetch("/api/mailerlite")
+      .then((r) => r.json())
+      .then((d) => { if (d.success) setSubscribers(d.data.subscribers); });
   }, []);
 
   if (!data) {
@@ -103,7 +108,7 @@ export default function HomePage() {
       {/* Content & overige stats */}
       <div>
         <p className="section-label mb-4">Overzicht</p>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-5">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-5">
           {[
             { href: "/content", icon: Layout, label: "Gepubliceerd", value: content.gepubliceerd, sub: `${content.gepland} gepland · ${content.concept} concept` },
             { href: "/content", icon: Link2, label: "Affiliate links", value: affiliate.aantalLinks, sub: "actieve links" },
@@ -124,6 +129,18 @@ export default function HomePage() {
               </Link>
             );
           })}
+          <div className="card card-hover">
+            <div className="flex items-center justify-between mb-3">
+              <span className="flex items-center justify-center rounded-lg" style={{ width: 34, height: 34, backgroundColor: "#e6eefa" }}>
+                <Mail size={17} style={{ color: "#004BAD" }} />
+              </span>
+            </div>
+            <p className="kpi-value" style={{ fontSize: 24 }}>
+              {subscribers === null ? "—" : subscribers.toLocaleString("nl-NL")}
+            </p>
+            <p className="card-title mt-1.5" style={{ textTransform: "none", letterSpacing: 0, fontSize: 12 }}>Subscribers</p>
+            <p className="text-xs text-muted mt-0.5">MailerLite</p>
+          </div>
         </div>
       </div>
 
