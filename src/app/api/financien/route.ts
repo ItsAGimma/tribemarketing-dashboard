@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getTransacties, createTransactie, deleteTransactie, getMaandoverzicht } from "@/lib/db";
+import { getTransacties, createTransactie, updateTransactie, deleteTransactie, getMaandoverzicht } from "@/lib/db";
 
 export async function GET(req: NextRequest) {
   try {
@@ -31,6 +31,27 @@ export async function POST(req: NextRequest) {
       aftrekbaar: !!body.aftrekbaar,
     });
     return NextResponse.json({ success: true, data: { id } });
+  } catch (error) {
+    return NextResponse.json({ success: false, error: String(error) }, { status: 500 });
+  }
+}
+
+export async function PATCH(req: NextRequest) {
+  try {
+    const body = await req.json();
+    const { id, ...fields } = body;
+    if (!id) return NextResponse.json({ success: false, error: "ID ontbreekt" }, { status: 400 });
+    await updateTransactie(Number(id), {
+      datum: fields.datum,
+      bedrag: parseFloat(fields.bedrag),
+      type: fields.type,
+      categorie: fields.categorie,
+      omschrijving: fields.omschrijving,
+      rekening: fields.rekening,
+      aftrekbaar: !!fields.aftrekbaar,
+      platform: fields.platform,
+    });
+    return NextResponse.json({ success: true });
   } catch (error) {
     return NextResponse.json({ success: false, error: String(error) }, { status: 500 });
   }

@@ -171,6 +171,20 @@ export async function createTransactie(data: { datum: string; bedrag: number; ty
   return row?.id;
 }
 
+export async function updateTransactie(id: number, data: { datum: string; bedrag: number; type: string; categorie: string; omschrijving?: string; rekening?: string; aftrekbaar?: boolean; platform?: string }) {
+  const sb = getSupabase();
+  await sb.from("transacties").update({
+    datum: data.datum,
+    bedrag: data.bedrag,
+    type: data.type,
+    categorie: data.categorie,
+    omschrijving: data.omschrijving || null,
+    rekening: data.rekening || null,
+    aftrekbaar: !!data.aftrekbaar,
+    platform: data.platform || null,
+  }).eq("id", id);
+}
+
 export async function deleteTransactie(id: number) {
   const sb = getSupabase();
   await sb.from("transacties").delete().eq("id", id);
