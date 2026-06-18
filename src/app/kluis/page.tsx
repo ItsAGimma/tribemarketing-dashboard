@@ -129,8 +129,8 @@ export default function KluisPage() {
   }
 
   // ─── Setup ───────────────────────────────────────────────────────────────
-  async function handleSetup(e: React.FormEvent) {
-    e.preventDefault();
+  async function handleSetup(e?: React.FormEvent | React.MouseEvent | React.KeyboardEvent) {
+    e?.preventDefault();
     setPinFout("");
     if (pin.length < 6) { setPinFout("Pincode moet minimaal 6 cijfers zijn."); return; }
     if (pin !== pinBevestig) { setPinFout("Pincodes komen niet overeen."); return; }
@@ -176,8 +176,8 @@ export default function KluisPage() {
   }
 
   // ─── Ontgrendelen ─────────────────────────────────────────────────────────
-  async function handleOntgrendel(e: React.FormEvent) {
-    e.preventDefault();
+  async function handleOntgrendel(e?: React.FormEvent | React.MouseEvent | React.KeyboardEvent) {
+    e?.preventDefault();
     setPinFout("");
     if (!instellingen) return;
     try {
@@ -195,8 +195,8 @@ export default function KluisPage() {
   }
 
   // ─── Herstel ──────────────────────────────────────────────────────────────
-  async function handleHerstel(e: React.FormEvent) {
-    e.preventDefault();
+  async function handleHerstel(e?: React.FormEvent | React.MouseEvent | React.KeyboardEvent) {
+    e?.preventDefault();
     setPinFout("");
     if (!instellingen) return;
     if (nieuwePin.length < 4) { setPinFout("Pincode moet minimaal 4 cijfers zijn."); return; }
@@ -306,7 +306,7 @@ export default function KluisPage() {
   }
 
   // ─── Render helpers ───────────────────────────────────────────────────────
-  const pinInput = (value: string, onChange: (v: string) => void, placeholder: string, autoFocus = false) => (
+  const pinInput = (value: string, onChange: (v: string) => void, placeholder: string, autoFocus = false, onKeyDown?: (e: React.KeyboardEvent) => void) => (
     <input
       type="password"
       inputMode="numeric"
@@ -317,6 +317,7 @@ export default function KluisPage() {
       placeholder={placeholder}
       value={value}
       onChange={(e) => onChange(e.target.value.replace(/\D/g, ""))}
+      onKeyDown={onKeyDown}
       className="input text-center text-xl tracking-[0.5em] font-mono"
     />
   );
@@ -344,20 +345,20 @@ export default function KluisPage() {
             <p className="text-sm text-muted mt-1">Kies een pincode om je wachtwoorden te beveiligen.</p>
           </div>
 
-          <form onSubmit={handleSetup} autoComplete="off" className="card space-y-4">
+          <div className="card space-y-4">
             <div>
               <label className="label">Pincode</label>
               {pinInput(pin, setPin, "••••••", true)}
             </div>
             <div>
               <label className="label">Pincode bevestigen</label>
-              {pinInput(pinBevestig, setPinBevestig, "••••••")}
+              {pinInput(pinBevestig, setPinBevestig, "••••••", false, (e) => { if (e.key === "Enter" && pin && pinBevestig) handleSetup(e as unknown as React.FormEvent); })}
             </div>
             {pinFout && <p className="text-sm text-red-500">{pinFout}</p>}
-            <button type="submit" className="btn-primary w-full" disabled={!pin || !pinBevestig}>
+            <button onClick={handleSetup} className="btn-primary w-full" disabled={!pin || !pinBevestig}>
               Kluis aanmaken
             </button>
-          </form>
+          </div>
         </div>
       </div>
 
@@ -409,19 +410,19 @@ export default function KluisPage() {
             <p className="text-sm text-muted mt-1">Voer je pincode in om toegang te krijgen.</p>
           </div>
 
-          <form onSubmit={handleOntgrendel} autoComplete="off" className="card space-y-4">
+          <div className="card space-y-4">
             <div>
               <label className="label">Pincode</label>
-              {pinInput(pin, setPin, "••••••", true)}
+              {pinInput(pin, setPin, "••••••", true, (e) => { if (e.key === "Enter" && pin) handleOntgrendel(e as unknown as React.FormEvent); })}
             </div>
             {pinFout && <p className="text-sm text-red-500">{pinFout}</p>}
-            <button type="submit" className="btn-primary w-full" disabled={!pin}>
+            <button onClick={handleOntgrendel} className="btn-primary w-full" disabled={!pin}>
               Ontgrendelen
             </button>
             <button type="button" onClick={() => { setPinFout(""); setStatus("herstel"); }} className="w-full text-sm text-center text-brand-600 hover:text-brand-700">
               Pincode vergeten?
             </button>
-          </form>
+          </div>
         </div>
       </div>
     );
@@ -440,7 +441,7 @@ export default function KluisPage() {
             <p className="text-sm text-muted mt-1">Voer je herstelcode in en stel een nieuwe pincode in.</p>
           </div>
 
-          <form onSubmit={handleHerstel} autoComplete="off" className="card space-y-4">
+          <div className="card space-y-4">
             <div>
               <label className="label">Herstelcode</label>
               <input
@@ -450,6 +451,7 @@ export default function KluisPage() {
                 value={herstelCode}
                 onChange={(e) => setHerstelCode(e.target.value)}
                 autoFocus
+                autoComplete="off"
               />
             </div>
             <div>
@@ -458,16 +460,16 @@ export default function KluisPage() {
             </div>
             <div>
               <label className="label">Nieuwe pincode bevestigen</label>
-              {pinInput(nieuwePinBevestig, setNieuwePinBevestig, "••••••")}
+              {pinInput(nieuwePinBevestig, setNieuwePinBevestig, "••••••", false, (e) => { if (e.key === "Enter" && herstelCode && nieuwePin && nieuwePinBevestig) handleHerstel(e as unknown as React.FormEvent); })}
             </div>
             {pinFout && <p className="text-sm text-red-500">{pinFout}</p>}
-            <button type="submit" className="btn-primary w-full" disabled={!herstelCode || !nieuwePin || !nieuwePinBevestig}>
+            <button onClick={handleHerstel} className="btn-primary w-full" disabled={!herstelCode || !nieuwePin || !nieuwePinBevestig}>
               Pincode instellen
             </button>
             <button type="button" onClick={() => { setPinFout(""); setStatus("vergrendeld"); }} className="w-full text-sm text-center text-muted hover:text-gray-700">
               ← Terug naar inloggen
             </button>
-          </form>
+          </div>
         </div>
       </div>
     );
