@@ -9,10 +9,11 @@ import {
 } from "@/lib/kluis-crypto";
 import { logActie } from "@/lib/audit";
 
-type Status = "laden" | "setup" | "vergrendeld" | "herstel" | "ontgrendeld";
+type Status = "laden" | "setup" | "koppelen" | "vergrendeld" | "herstel" | "ontgrendeld";
 
 interface Instellingen {
   id: number;
+  user_id: string | null;
   pin_salt: string;
   encrypted_master_key: string;
   master_key_iv: string;
@@ -48,6 +49,13 @@ export default function KluisPage() {
   const [entries, setEntries] = useState<Entry[]>([]);
   const [onthuld, setOnthuld] = useState<Record<number, Onthuld>>({});
   const [wachtwoordZichtbaar, setWachtwoordZichtbaar] = useState<Record<number, boolean>>({});
+
+  // Koppelen
+  const [bestaandeKluis, setBestaandeKluis] = useState<Instellingen | null>(null);
+  const [koppelenMethode, setKoppelenMethode] = useState<"pin" | "herstel">("pin");
+  const [bestaandePin, setBestaandePin] = useState("");
+  const [koppelenNieuwePin, setKoppelenNieuwePin] = useState("");
+  const [koppelenNieuwePinBevestig, setKoppelenNieuwePinBevestig] = useState("");
 
   // Forms
   const [pin, setPin] = useState("");
@@ -110,6 +118,9 @@ export default function KluisPage() {
     if (json.data) {
       setInstellingen(json.data);
       setStatus("vergrendeld");
+    } else if (json.bestaandeKluis) {
+      setBestaandeKluis(json.bestaandeKluis);
+      setStatus("koppelen");
     } else {
       setStatus("setup");
     }
@@ -214,7 +225,7 @@ export default function KluisPage() {
       await fetch("/api/kluis/instellingen", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: instellingen.id, pin_salt: bufferToBase64(newSalt), encrypted_master_key: emk, master_key_iv: mkiv }),
+        body: JSON.stringify({ pin_salt: bufferToBase64(newSalt), encrypted_master_key: emk, master_key_iv: mkiv }),
       });
 
       setMasterKey(mk);
@@ -228,6 +239,57 @@ export default function KluisPage() {
       setPinFout("Ongeldige herstelcode. Controleer de code en probeer opnieuw.");
     }
   }
+
+  // ─── Koppelen ─────────────────────────────────────────────────────────────
+  async function handleKoppelen(e?: React.FormEvent | React.MouseEvent | React.KeyboardEvent) {
+    e?.preventDefault();
+    setPinFout("");
+    if (!bestaandeKluis) return;
+    if (koppelenNieuwePin.length < 6) { setPinFout("Pincode moet minimaal 6 cijfers zijn."); return; }
+    if (koppelenNieuwePin !== koppelenNieuwePinBevestig) { setPinFout("Pincodes komen niet overeen."); return; }
+
+    try {
+      let masterKeyB64: string;
+      if (koppelenMethode === "pin") {
+        const pinKey = await deriveKey(bestaandePin, base64ToBuffer(bestaandeKluis.pin_salt));
+        masterKeyB64 = await decryptRaw(pinKey, bestaandeKluis.encrypted_master_key, bestaandeKluis.master_key_iv);
+      } else {
+        const recKey = await deriveKey(herstelCode.replace(/[-\s]/g, ""), base64ToBuffer(bestaandeKluis.recovery_salt));
+        masterKeyB64 = await decryptRaw(recKey, bestaandeKluis.recovery_encrypted_master_key, bestaandeKluis.recovery_iv);
+      }
+
+      const newSalt = randomBuffer(32);
+      const newPinKey = await deriveKey(koppelenNieuwePin, newSalt);
+      const { c: emk, iv: mkiv } = await encryptRaw(newPinKey, masterKeyB64);
+
+      const recCode = generateRecoveryCode();
+      const recSalt = randomBuffer(32);
+      const recKey2 = await deriveKey(recCode.replace(/-/g, ""), recSalt);
+      const { c: remk, iv: riv } = await encryptRaw(recKey2, masterKeyB64);
+
+      const res = await fetch("/api/kluis/instellingen", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          pin_salt: bufferToBase64(newSalt),
+          encrypted_master_key: emk,
+          master_key_iv: mkiv,
+          recovery_salt: bufferToBase64(recSalt),
+          recovery_encrypted_master_key: remk,
+          recovery_iv: riv,
+        }),
+      });
+      if (!res.ok) { setPinFout("Er is iets misgegaan. Probeer opnieuw."); return; }
+
+      const mk = await importKey(base64ToBuffer(masterKeyB64));
+      setHerstelCodeWeergave(recCode);
+      setMasterKey(mk);
+      setToonHerstelModal(true);
+    } catch {
+      setPinFout(koppelenMethode === "pin" ? "Verkeerde pincode." : "Ongeldige herstelcode.");
+    }
+  }
+
 
   // ─── Entry CRUD ───────────────────────────────────────────────────────────
   async function openToevoegen() {
@@ -398,6 +460,80 @@ export default function KluisPage() {
         </div>
       )}
       </>
+    );
+  }
+
+  // ─── Koppelen ─────────────────────────────────────────────────────────────
+  if (status === "koppelen") {
+    return (
+      <div className="min-h-[70vh] flex items-center justify-center">
+        <div className="w-full max-w-sm">
+          <div className="text-center mb-8">
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-brand-50 mb-4">
+              <Shield size={32} className="text-brand-600" />
+            </div>
+            <h1 className="text-2xl font-bold text-[#0f172a]">Kluis koppelen</h1>
+            <p className="text-sm text-muted mt-1">Er bestaat al een gedeelde kluis. Voer de huidige pincode of herstelcode in en stel jouw eigen pincode in.</p>
+          </div>
+
+          <div className="card space-y-4">
+            {/* Methode toggle */}
+            <div className="flex gap-2">
+              {(["pin", "herstel"] as const).map((m) => (
+                <button
+                  key={m}
+                  type="button"
+                  onClick={() => { setKoppelenMethode(m); setPinFout(""); }}
+                  className={`flex-1 py-1.5 rounded-xl text-sm font-medium transition-all ${koppelenMethode === m ? "bg-brand-600 text-white" : "bg-gray-100 text-gray-500 hover:text-gray-700"}`}
+                >
+                  {m === "pin" ? "Bestaande pincode" : "Herstelcode"}
+                </button>
+              ))}
+            </div>
+
+            {koppelenMethode === "pin" ? (
+              <div>
+                <label className="label">Bestaande pincode</label>
+                {pinInput(bestaandePin, setBestaandePin, "••••••", true)}
+              </div>
+            ) : (
+              <div>
+                <label className="label">Herstelcode</label>
+                <input
+                  type="text"
+                  className="input font-mono tracking-widest uppercase text-center"
+                  placeholder="XXXX-XXXX-XXXX-XXXX-XXXX-XXXX"
+                  value={herstelCode}
+                  onChange={(e) => setHerstelCode(e.target.value)}
+                  autoComplete="off"
+                  autoFocus
+                />
+              </div>
+            )}
+
+            <div className="border-t border-gray-100 pt-3">
+              <label className="label">Jouw nieuwe pincode</label>
+              {pinInput(koppelenNieuwePin, setKoppelenNieuwePin, "••••••")}
+            </div>
+            <div>
+              <label className="label">Pincode bevestigen</label>
+              {pinInput(koppelenNieuwePinBevestig, setKoppelenNieuwePinBevestig, "••••••", false, (e) => {
+                if (e.key === "Enter") handleKoppelen(e as unknown as React.FormEvent);
+              })}
+            </div>
+
+            {pinFout && <p className="text-sm text-red-500">{pinFout}</p>}
+
+            <button
+              onClick={handleKoppelen}
+              className="btn-primary w-full"
+              disabled={koppelenMethode === "pin" ? !bestaandePin || !koppelenNieuwePin || !koppelenNieuwePinBevestig : !herstelCode || !koppelenNieuwePin || !koppelenNieuwePinBevestig}
+            >
+              Kluis koppelen
+            </button>
+          </div>
+        </div>
+      </div>
     );
   }
 
