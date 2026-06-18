@@ -48,10 +48,79 @@ function Trend({ huidig, vorig }: { huidig: number; vorig: number }) {
 
 const maanden = ["jan", "feb", "mrt", "apr", "mei", "jun", "jul", "aug", "sep", "okt", "nov", "dec"];
 
+function getWelkomstTekst(): string {
+  const nu = new Date();
+  const dag = nu.getDay();
+  const uur = nu.getHours();
+  const datum = nu.getDate();
+  const pool: string[] = [];
+
+  if (datum >= 1 && datum <= 3) {
+    pool.push(
+      "Nieuwe maand, nieuw doel. Wat wil je deze maand bereiken?",
+      "Check je affiliate inkomsten van vorige maand — groei je?"
+    );
+  } else if (datum >= 28) {
+    pool.push(
+      "Laatste dagen van de maand. Haal je je doel nog?",
+      "Maand bijna voorbij — tijd voor een kleine terugblik."
+    );
+  }
+
+  if (dag === 1) {
+    pool.push(
+      "Nieuwe week. Wat wordt jouw grootste win deze week?",
+      "Maandag = momentum. Zet die eerste pin maar live."
+    );
+  } else if (dag === 2 || dag === 3) {
+    pool.push(
+      "Middenin de week — hoe staat de content kalender ervoor?",
+      "Stille dag? Perfecte dag om een artikel af te maken.",
+      "Geen inspiratie? Open Pinterest en kijk wat er trending is."
+    );
+  } else if (dag === 4) {
+    pool.push(
+      "Bijna weekend. Nog een artikel de deur uit voor vrijdag?",
+      "Donderdag is een goede dag om je MailerLite stats te checken."
+    );
+  } else if (dag === 5) {
+    pool.push(
+      "Einde van de werkweek. Wat heb je deze week bereikt voor Tribe Marketing?",
+      "Vrijdag = contentdag. Jolien heeft vast iets klaar liggen."
+    );
+  }
+
+  if (uur >= 6 && uur < 12) {
+    pool.push(
+      "Goedemorgen. Tribe Marketing gaat zichzelf niet opbouwen.",
+      "Koffie erbij en aan de slag."
+    );
+  } else if (uur >= 19 && uur < 23) {
+    pool.push(
+      "Laat aan het werk? Respect. Houd het wel bij.",
+      "Avondshift bij Tribe Marketing — de beste tijd om ongestoord te werken."
+    );
+  }
+
+  if (pool.length === 0) {
+    pool.push(
+      "Kleine stappen, elke dag. Dat is hoe affiliate sites groeien.",
+      "Eén artikel kan duizenden bezoekers opleveren. Schrijf er vandaag een.",
+      "Pinterest algorithme houdt van consistentie. Jij ook?",
+      "Hoe meer je plan, hoe minder je improviseert.",
+      "Affiliate marketing is een marathon, geen sprint.",
+      "Check je stats, maar raak er niet in verzonken."
+    );
+  }
+
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+
 export default function HomePage() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [subscribers, setSubscribers] = useState<number | null>(null);
   const [openTaken, setOpenTaken] = useState<{ id: number; titel: string }[]>([]);
+  const [welkomstTekst] = useState(() => getWelkomstTekst());
   const nu = new Date();
 
   useEffect(() => {
@@ -82,9 +151,8 @@ export default function HomePage() {
       {/* Header */}
       <div>
         <h1 className="page-title mb-1">{nu.getHours() < 12 ? "Goedemorgen" : nu.getHours() < 18 ? "Goedemiddag" : "Goedenavond"}</h1>
-        <p className="text-muted text-sm">
-          {nu.getDate()} {maanden[nu.getMonth()]} {nu.getFullYear()} · Tribe Marketing Dashboard
-        </p>
+        <p className="text-muted text-sm mb-1">{nu.getDate()} {maanden[nu.getMonth()]} {nu.getFullYear()}</p>
+        <p className="text-sm text-[#0f172a]">{welkomstTekst}</p>
       </div>
 
       {/* Financiën KPIs */}
