@@ -36,6 +36,42 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: "URL kon niet worden opgehaald. Controleer de URL en probeer opnieuw." }, { status: 400 });
     }
 
+    // Probeer WordPress REST API content op te halen als de pagina een JS-frontend heeft
+    async function probeWpContent(): Promise<string | null> {
+      try {
+        const slug = new URL(analyseUrl).pathname.split("/").filter(Boolean).pop() || "";
+        if (!slug) return null;
+
+        // Zoek wp-json URL in HTML (inline scripts)
+        let wpApiMatch = html.match(/["'`](https?:\/\/[^"'`\s]+)\/wp-json/);
+
+        // Niet gevonden in HTML — doorzoek externe JS-bestanden
+        if (!wpApiMatch) {
+          const scriptSrcs = [...html.matchAll(/src=["']([^"']+\.js[^"']*)/gi)].map(m => m[1]);
+          for (const src of scriptSrcs.slice(0, 3)) {
+            try {
+              const jsUrl = src.startsWith("http") ? src : new URL(src, analyseUrl).href;
+              const jsRes = await fetch(jsUrl, { signal: AbortSignal.timeout(5000) });
+              const jsText = await jsRes.text();
+              wpApiMatch = jsText.match(/["'`](https?:\/\/[^"'`\s]+)\/wp-json/);
+              if (wpApiMatch) break;
+            } catch { continue; }
+          }
+        }
+
+        if (!wpApiMatch) return null;
+        const wpBase = wpApiMatch[1];
+        const apiUrl = `${wpBase}/wp-json/wp/v2/posts?slug=${slug}&_fields=content`;
+        const res = await fetch(apiUrl, { signal: AbortSignal.timeout(8000) });
+        if (!res.ok) return null;
+        const data = await res.json();
+        if (!Array.isArray(data) || !data[0]?.content?.rendered) return null;
+        return data[0].content.rendered;
+      } catch {
+        return null;
+      }
+    }
+
     const checks: Check[] = [];
 
     // ─── TECHNISCH ────────────────────────────────────────────────
@@ -210,17 +246,32 @@ export async function POST(req: NextRequest) {
     });
 
     // Woordenaantal
-    const tekst = html.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, "")
+    const stripHtml = (input: string) => input
+      .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, "")
       .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, "")
       .replace(/<[^>]+>/g, " ")
       .replace(/\s+/g, " ")
       .trim();
-    const wordCount = tekst.split(" ").filter(w => w.length > 1).length;
+
+    let telBron = "html";
+    let wordCount = stripHtml(html).split(" ").filter(w => w.length > 1).length;
+
+    if (wordCount < 400) {
+      const wpContent = await probeWpContent();
+      if (wpContent) {
+        const wpCount = stripHtml(wpContent).split(" ").filter(w => w.length > 1).length;
+        if (wpCount > wordCount) {
+          wordCount = wpCount;
+          telBron = "wp-api";
+        }
+      }
+    }
+
     checks.push({
       naam: "Woordenaantal",
       categorie: "Content",
       status: wordCount >= 800 ? "goed" : wordCount >= 400 ? "waarschuwing" : "fout",
-      waarde: `${wordCount} woorden`,
+      waarde: `${wordCount} woorden${telBron === "wp-api" ? " (via WordPress API)" : ""}`,
       beschrijving: wordCount < 400 ? "Zeer weinig inhoud." : wordCount < 800 ? "Matige hoeveelheid inhoud." : "Goede hoeveelheid inhoud.",
       tip: wordCount < 800
         ? `Je pagina heeft ${wordCount} woorden. Pagina's met 1000+ woorden scoren gemiddeld hoger in Google. Voeg meer diepgaande informatie, FAQ's of praktische tips toe.`
