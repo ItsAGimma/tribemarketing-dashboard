@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabase } from "@/lib/supabase";
 import { getSupabaseServer } from "@/lib/supabase-server";
+import crypto from "crypto";
 
 async function getCurrentUserId(): Promise<string | null> {
   try {
@@ -12,70 +13,50 @@ async function getCurrentUserId(): Promise<string | null> {
   }
 }
 
+function hashPin(pin: string, salt: string): string {
+  return crypto.pbkdf2Sync(pin, salt, 100000, 32, "sha256").toString("base64");
+}
+
 export async function GET() {
   const userId = await getCurrentUserId();
   if (!userId) return NextResponse.json({ success: false, error: "Niet ingelogd" }, { status: 401 });
 
   const sb = getSupabase();
+  const { data } = await sb.from("kluis_instellingen").select("id").eq("user_id", userId).maybeSingle();
 
-  // Eigen rij ophalen
-  const { data: eigenRij } = await sb
-    .from("kluis_instellingen")
-    .select("*")
-    .eq("user_id", userId)
-    .maybeSingle();
-
-  // Als geen eigen rij: kijk of er al een kluis bestaat (andere gebruiker of oude rij zonder user_id)
-  let bestaandeKluis = null;
-  if (!eigenRij) {
-    const { data: bestaand } = await sb
-      .from("kluis_instellingen")
-      .select("*")
-      .limit(1)
-      .maybeSingle();
-    bestaandeKluis = bestaand;
-  }
-
-  return NextResponse.json({ success: true, data: eigenRij, bestaandeKluis });
+  return NextResponse.json({ success: true, hasSetup: !!data });
 }
 
 export async function POST(req: NextRequest) {
   const userId = await getCurrentUserId();
   if (!userId) return NextResponse.json({ success: false, error: "Niet ingelogd" }, { status: 401 });
 
-  const body = await req.json();
-  const { pin_salt, encrypted_master_key, master_key_iv, recovery_salt, recovery_encrypted_master_key, recovery_iv } = body;
-  if (!pin_salt || !encrypted_master_key || !master_key_iv || !recovery_salt || !recovery_encrypted_master_key || !recovery_iv) {
-    return NextResponse.json({ success: false, error: "Verplichte velden ontbreken" }, { status: 400 });
-  }
+  const { pin } = await req.json();
+  if (!pin || pin.length < 6) return NextResponse.json({ success: false, error: "Pincode te kort" }, { status: 400 });
+
+  const salt = crypto.randomBytes(32).toString("base64");
+  const pin_hash = hashPin(pin, salt);
 
   const sb = getSupabase();
-  const { data, error } = await sb.from("kluis_instellingen").insert({
-    user_id: userId,
-    pin_salt, encrypted_master_key, master_key_iv,
-    recovery_salt, recovery_encrypted_master_key, recovery_iv,
-  }).select("id").single();
-
+  const { error } = await sb.from("kluis_instellingen").upsert({ user_id: userId, pin_hash, pin_salt: salt }, { onConflict: "user_id" });
   if (error) return NextResponse.json({ success: false, error: error.message }, { status: 500 });
-  return NextResponse.json({ success: true, id: data.id });
+
+  return NextResponse.json({ success: true });
 }
 
 export async function PUT(req: NextRequest) {
   const userId = await getCurrentUserId();
   if (!userId) return NextResponse.json({ success: false, error: "Niet ingelogd" }, { status: 401 });
 
-  const body = await req.json();
-  const { pin_salt, encrypted_master_key, master_key_iv } = body;
-  if (!pin_salt || !encrypted_master_key || !master_key_iv) {
-    return NextResponse.json({ success: false, error: "Verplichte velden ontbreken" }, { status: 400 });
-  }
+  const { pin } = await req.json();
+  if (!pin || pin.length < 6) return NextResponse.json({ success: false, error: "Pincode te kort" }, { status: 400 });
+
+  const salt = crypto.randomBytes(32).toString("base64");
+  const pin_hash = hashPin(pin, salt);
 
   const sb = getSupabase();
-  const { error } = await sb
-    .from("kluis_instellingen")
-    .update({ pin_salt, encrypted_master_key, master_key_iv })
-    .eq("user_id", userId);
-
+  const { error } = await sb.from("kluis_instellingen").update({ pin_hash, pin_salt: salt }).eq("user_id", userId);
   if (error) return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+
   return NextResponse.json({ success: true });
 }
