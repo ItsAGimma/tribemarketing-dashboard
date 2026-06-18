@@ -308,17 +308,21 @@ export default function KluisPage() {
   // ─── Render helpers ───────────────────────────────────────────────────────
   const pinInput = (value: string, onChange: (v: string) => void, placeholder: string, autoFocus = false, onKeyDown?: (e: React.KeyboardEvent) => void) => (
     <input
-      type="password"
+      type="text"
       inputMode="numeric"
       pattern="[0-9]*"
       maxLength={6}
       autoFocus={autoFocus}
       autoComplete="off"
+      autoCorrect="off"
+      autoCapitalize="off"
+      spellCheck={false}
       placeholder={placeholder}
       value={value}
       onChange={(e) => onChange(e.target.value.replace(/\D/g, ""))}
       onKeyDown={onKeyDown}
       className="input text-center text-xl tracking-[0.5em] font-mono"
+      style={{ WebkitTextSecurity: "disc" } as React.CSSProperties}
     />
   );
 
