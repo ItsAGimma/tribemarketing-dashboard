@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Home, Layout, BarChart2, DollarSign, FileText, Settings, LogOut, Menu, X, CheckSquare, Globe, Shield } from "lucide-react";
 import { getSupabaseBrowser } from "@/lib/supabase-browser";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 const navGroups = [
   {
@@ -41,6 +41,15 @@ export default function Navigation() {
   const pathname = usePathname();
   const router = useRouter();
   const [open, setOpen] = useState(false);
+  const [email, setEmail] = useState<string | null>(null);
+  const [weergavenaam, setWeergavenaam] = useState<string | null>(null);
+
+  useEffect(() => {
+    getSupabaseBrowser().auth.getUser().then(({ data }) => {
+      setEmail(data.user?.email ?? null);
+      setWeergavenaam(data.user?.user_metadata?.display_name || null);
+    });
+  }, []);
 
   async function uitloggen() {
     const sb = getSupabaseBrowser();
@@ -82,24 +91,34 @@ export default function Navigation() {
         ))}
       </nav>
 
-      <div className="px-3 py-4 border-t border-white/5 space-y-1">
-        <Link
-          href="/instellingen"
-          onClick={() => setOpen(false)}
-          className={`flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-medium transition-all duration-150 w-full ${
-            pathname.startsWith("/instellingen") ? "bg-[#004BAD] text-white" : "text-[#8FA0BC] hover:bg-white/5 hover:text-white"
-          }`}
-        >
-          <Settings size={18} strokeWidth={2} />
-          Instellingen
-        </Link>
-        <button
-          onClick={uitloggen}
-          className="flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-medium transition-all duration-150 w-full text-[#8FA0BC] hover:bg-white/5 hover:text-white"
-        >
-          <LogOut size={18} strokeWidth={2} />
-          Uitloggen
-        </button>
+      <div className="px-3 py-4 border-t border-white/5">
+        <div className="flex items-center gap-2">
+          <Link
+            href="/profiel"
+            onClick={() => setOpen(false)}
+            className="flex items-center gap-2 flex-1 min-w-0 px-2 py-1.5 rounded-lg hover:bg-white/5 transition-colors"
+          >
+            <div className="w-7 h-7 rounded-full bg-[#1e3a5f] flex items-center justify-center shrink-0 text-[11px] font-semibold text-[#8FA0BC]">
+              {(weergavenaam || email) ? (weergavenaam || email)![0].toUpperCase() : "?"}
+            </div>
+            <span className="text-[11px] text-[#8FA0BC] truncate">{weergavenaam || email || ""}</span>
+          </Link>
+          <Link
+            href="/instellingen"
+            onClick={() => setOpen(false)}
+            title="Instellingen"
+            className={`p-1.5 rounded-lg transition-colors shrink-0 ${pathname.startsWith("/instellingen") ? "text-white bg-[#004BAD]" : "text-[#8FA0BC] hover:bg-white/5 hover:text-white"}`}
+          >
+            <Settings size={16} strokeWidth={2} />
+          </Link>
+          <button
+            onClick={uitloggen}
+            title="Uitloggen"
+            className="p-1.5 rounded-lg text-[#8FA0BC] hover:bg-white/5 hover:text-white transition-colors shrink-0"
+          >
+            <LogOut size={16} strokeWidth={2} />
+          </button>
+        </div>
       </div>
     </>
   );
