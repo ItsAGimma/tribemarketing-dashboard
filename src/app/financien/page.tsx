@@ -179,6 +179,21 @@ export default function FinancienPage() {
           ) : Object.keys(cjData).length === 0 ? (
             <p className="text-sm text-muted">Geen commissies gevonden in deze periode.</p>
           ) : (
+            <>
+            <div className="grid grid-cols-3 gap-3 mb-5">
+              <div className="rounded-xl p-4" style={{ background: "var(--color-background-secondary, #f8f9fb)" }}>
+                <p className="text-xs text-muted mb-1">Totale commissie</p>
+                <p className="text-xl font-medium text-[#0F6E56]">${Object.values(cjData).reduce((s, d) => s + d.commissie, 0).toFixed(2)}</p>
+              </div>
+              <div className="rounded-xl p-4" style={{ background: "var(--color-background-secondary, #f8f9fb)" }}>
+                <p className="text-xs text-muted mb-1">Transacties</p>
+                <p className="text-xl font-medium">{Object.values(cjData).reduce((s, d) => s + d.transacties, 0)}</p>
+              </div>
+              <div className="rounded-xl p-4" style={{ background: "var(--color-background-secondary, #f8f9fb)" }}>
+                <p className="text-xs text-muted mb-1">Totale omzet</p>
+                <p className="text-xl font-medium">${Object.values(cjData).reduce((s, d) => s + d.omzet, 0).toFixed(2)}</p>
+              </div>
+            </div>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
@@ -211,6 +226,7 @@ export default function FinancienPage() {
                 </tfoot>
               </table>
             </div>
+            </>
           )}
         </div>
       )}
