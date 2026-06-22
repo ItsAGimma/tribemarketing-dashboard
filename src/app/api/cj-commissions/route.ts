@@ -16,7 +16,9 @@ export async function GET() {
     }
 
     const nu = new Date();
-    const vanDatum = new Date(nu.getFullYear(), nu.getMonth() - 1, 1).toISOString().replace(/\.\d{3}Z$/, "Z");
+    const van = new Date(nu);
+    van.setDate(van.getDate() - 30);
+    const vanDatum = van.toISOString().replace(/\.\d{3}Z$/, "Z");
     const totDatum = nu.toISOString().replace(/\.\d{3}Z$/, "Z");
 
     const query = `{
