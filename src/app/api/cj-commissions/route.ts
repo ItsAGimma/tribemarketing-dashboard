@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getSetting } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
+export const maxDuration = 30;
 
 const CJ_ENDPOINT = "https://commissions.api.cj.com/query";
 
@@ -15,7 +16,7 @@ export async function GET() {
     }
 
     const nu = new Date();
-    const vanDatum = new Date(nu.getFullYear(), nu.getMonth() - 2, 1).toISOString().split("T")[0];
+    const vanDatum = new Date(nu.getFullYear(), nu.getMonth() - 1, 1).toISOString().split("T")[0];
     const totDatum = nu.toISOString().split("T")[0];
 
     const query = `{
@@ -44,7 +45,7 @@ export async function GET() {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({ query }),
-      signal: AbortSignal.timeout(10000),
+      signal: AbortSignal.timeout(25000),
     });
 
     if (!res.ok) {
