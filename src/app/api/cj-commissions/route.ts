@@ -29,11 +29,9 @@ export async function GET() {
         records {
           publisherCommission
           advertiserName
-          actionTrackerName
           postingDate
-          orderAmount
+          saleAmount { amount currency }
           actionStatus
-          websiteName
         }
       }
     }`;
@@ -70,7 +68,7 @@ export async function GET() {
       if (!perAdverteerder[naam]) perAdverteerder[naam] = { commissie: 0, transacties: 0, omzet: 0 };
       perAdverteerder[naam].commissie += parseFloat(r.publisherCommission || "0");
       perAdverteerder[naam].transacties += 1;
-      perAdverteerder[naam].omzet += parseFloat(r.orderAmount || "0");
+      perAdverteerder[naam].omzet += parseFloat(r.saleAmount?.amount || "0");
     }
 
     return NextResponse.json({ success: true, data: perAdverteerder, totaal: records.length, periode: { van: vanDatum, tot: totDatum } });

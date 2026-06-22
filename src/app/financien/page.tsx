@@ -61,8 +61,8 @@ export default function FinancienPage() {
     });
     fetch("/api/cj-commissions").then(r => r.json()).then(d => {
       if (d.success) { setCjData(d.data); setCjPeriode(d.periode); }
-      else setCjFout(d.error);
-    }).catch(() => setCjFout("Kan CJ data niet ophalen."));
+      else setCjFout(d.detail ? `${d.error} — ${d.detail}` : (d.error || "Onbekende fout"));
+    }).catch((e) => setCjFout(`Kan CJ data niet ophalen: ${e}`));
   }, []);
 
   async function laad() {
