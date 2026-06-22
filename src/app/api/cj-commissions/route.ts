@@ -26,11 +26,11 @@ export async function GET() {
       ) {
         count
         records {
-          pubCommissionAmountUsd
+          publisherCommission
           advertiserName
           actionTrackerName
           postingDate
-          saleAmountUsd
+          orderAmount
           actionStatus
           websiteName
         }
@@ -48,7 +48,9 @@ export async function GET() {
     });
 
     if (!res.ok) {
-      return NextResponse.json({ success: false, error: `CJ API fout: ${res.status}` }, { status: 502 });
+      let body = "";
+      try { body = await res.text(); } catch {}
+      return NextResponse.json({ success: false, error: `CJ API fout: ${res.status}`, detail: body }, { status: 502 });
     }
 
     const json = await res.json();
@@ -65,9 +67,9 @@ export async function GET() {
       if (r.actionStatus === "extended" || r.actionStatus === "reversed") continue;
       const naam = r.advertiserName || "Onbekend";
       if (!perAdverteerder[naam]) perAdverteerder[naam] = { commissie: 0, transacties: 0, omzet: 0 };
-      perAdverteerder[naam].commissie += parseFloat(r.pubCommissionAmountUsd || "0");
+      perAdverteerder[naam].commissie += parseFloat(r.publisherCommission || "0");
       perAdverteerder[naam].transacties += 1;
-      perAdverteerder[naam].omzet += parseFloat(r.saleAmountUsd || "0");
+      perAdverteerder[naam].omzet += parseFloat(r.orderAmount || "0");
     }
 
     return NextResponse.json({ success: true, data: perAdverteerder, totaal: records.length, periode: { van: vanDatum, tot: totDatum } });
