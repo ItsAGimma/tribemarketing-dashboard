@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { getSetting } from "@/lib/db";
 
+export const dynamic = "force-dynamic";
+
 const CJ_ENDPOINT = "https://commissions.api.cj.com/query";
 
 export async function GET() {
@@ -8,7 +10,6 @@ export async function GET() {
     const token = await getSetting("cj_api_token");
     const cid = await getSetting("cj_publisher_cid");
 
-    console.log("[cj-commissions] token aanwezig:", !!token, "cid aanwezig:", !!cid, "cid waarde:", cid);
     if (!token || !cid) {
       return NextResponse.json({ success: false, error: "CJ API token of Publisher CID ontbreekt in instellingen." }, { status: 400 });
     }
