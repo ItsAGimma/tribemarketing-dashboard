@@ -5,6 +5,7 @@ import { Pencil } from "lucide-react";
 import KpiCard from "@/components/KpiCard";
 import { logActie } from "@/lib/audit";
 
+
 interface Artikel {
   id: number;
   affiliate_link_id: number;
@@ -209,18 +210,6 @@ export default function AffiliateLinkManager() {
                   ) : (
                     <button onClick={() => setArtikelFormulier({ linkId: link.id, ...leegArtikel })} className="text-sm text-brand-600 hover:text-brand-700 font-medium">+ Artikel koppelen</button>
                   )}
-                </div>
-                <div className="border-t border-gray-100 pt-3">
-                  <h4 className="text-sm font-semibold text-[#0f172a] mb-2">Prestaties</h4>
-                  <div className="grid grid-cols-3 gap-3">
-                    {["Clicks", "Impressies", "CTR"].map((label) => (
-                      <div key={label} className="bg-white rounded-xl border border-gray-100 p-3 text-center">
-                        <p className="text-xs text-gray-400 mb-1">{label}</p>
-                        <p className="text-sm font-medium text-gray-300">—</p>
-                        <p className="text-xs text-gray-300 mt-0.5">API volgt</p>
-                      </div>
-                    ))}
-                  </div>
                 </div>
               </div>
             )}

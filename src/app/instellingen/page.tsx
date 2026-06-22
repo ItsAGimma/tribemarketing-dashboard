@@ -45,6 +45,14 @@ const secties = [
     ],
   },
   {
+    titel: "CJ Affiliate",
+    beschrijving: "Commissiedata ophalen via de CJ GraphQL API.",
+    velden: [
+      { sleutel: "cj_api_token", label: "Personal Access Token", placeholder: "••••••••", type: "password", link: "https://developers.cj.com/account/personal-access-tokens", linkLabel: "Aanmaken via CJ Developer Portal" },
+      { sleutel: "cj_publisher_cid", label: "Publisher CID", placeholder: "1234567", link: "https://members.cj.com/member/publisher/home.do", linkLabel: "Vinden in je CJ account" },
+    ],
+  },
+  {
     titel: "TikTok",
     beschrijving: "TikTok for Developers app. Redirect URI: http://localhost:3000/analytics?state=tiktok",
     velden: [

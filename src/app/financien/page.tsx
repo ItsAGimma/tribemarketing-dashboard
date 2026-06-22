@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { CreditCard, User, Pencil } from "lucide-react";
+import { CreditCard, User, Pencil, TrendingUp } from "lucide-react";
 import Tabs from "@/components/Tabs";
 import KpiCard from "@/components/KpiCard";
 import { type Persoon } from "@/components/PersoonSelector";
@@ -40,9 +40,12 @@ function maandLabel(maand: string) {
 const euro = new Intl.NumberFormat("nl-NL", { style: "currency", currency: "EUR" });
 
 export default function FinancienPage() {
-  const [actieveTab, setActieveTab] = useState<"transacties" | "onttrekkingen">("transacties");
+  const [actieveTab, setActieveTab] = useState<"transacties" | "onttrekkingen" | "cj">("transacties");
   const [transacties, setTransacties] = useState<Transactie[]>([]);
   const [maanddata, setMaanddata] = useState<Maanddata[]>([]);
+  const [cjData, setCjData] = useState<Record<string, { commissie: number; transacties: number; omzet: number }> | null>(null);
+  const [cjPeriode, setCjPeriode] = useState<{ van: string; tot: string } | null>(null);
+  const [cjFout, setCjFout] = useState<string | null>(null);
   const [formulier, setFormulier] = useState(lege);
   const [toonFormulier, setToonFormulier] = useState(false);
   const [filterMaand, setFilterMaand] = useState("alle");
@@ -56,6 +59,10 @@ export default function FinancienPage() {
     fetch("/api/affiliate-platforms").then(r => r.json()).then(d => {
       if (d.success) setPlatforms(d.data.filter((p: { actief: boolean }) => p.actief));
     });
+    fetch("/api/cj-commissions").then(r => r.json()).then(d => {
+      if (d.success) { setCjData(d.data); setCjPeriode(d.periode); }
+      else setCjFout(d.error);
+    }).catch(() => setCjFout("Kan CJ data niet ophalen."));
   }, []);
 
   async function laad() {
@@ -151,12 +158,62 @@ export default function FinancienPage() {
         tabs={[
           { id: "transacties", label: "Transacties", icon: CreditCard },
           { id: "onttrekkingen", label: "Onttrekkingen", icon: User },
+          { id: "cj", label: "CJ Commissies", icon: TrendingUp },
         ]}
         active={actieveTab}
-        onChange={id => setActieveTab(id as "transacties" | "onttrekkingen")}
+        onChange={id => setActieveTab(id as "transacties" | "onttrekkingen" | "cj")}
       />
 
       {actieveTab === "onttrekkingen" && <OnttrekkingenTab />}
+
+      {actieveTab === "cj" && (
+        <div className="card">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="section-title mb-0">CJ Affiliate commissies</h2>
+            {cjPeriode && <span className="text-xs text-muted">{cjPeriode.van} – {cjPeriode.tot}</span>}
+          </div>
+          {cjFout ? (
+            <p className="text-sm text-muted">{cjFout}</p>
+          ) : !cjData ? (
+            <p className="text-sm text-muted">Laden...</p>
+          ) : Object.keys(cjData).length === 0 ? (
+            <p className="text-sm text-muted">Geen commissies gevonden in deze periode.</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-gray-100">
+                    <th className="text-left py-2 text-xs font-medium text-muted">Adverteerder</th>
+                    <th className="text-right py-2 text-xs font-medium text-muted">Transacties</th>
+                    <th className="text-right py-2 text-xs font-medium text-muted">Omzet</th>
+                    <th className="text-right py-2 text-xs font-medium text-muted">Commissie</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {Object.entries(cjData)
+                    .sort((a, b) => b[1].commissie - a[1].commissie)
+                    .map(([naam, stats]) => (
+                      <tr key={naam} className="border-b border-gray-50 last:border-0">
+                        <td className="py-2.5 font-medium text-[#0f172a]">{naam}</td>
+                        <td className="py-2.5 text-right text-muted">{stats.transacties}</td>
+                        <td className="py-2.5 text-right text-muted">${stats.omzet.toFixed(2)}</td>
+                        <td className="py-2.5 text-right font-semibold text-[#2D6A4F]">${stats.commissie.toFixed(2)}</td>
+                      </tr>
+                    ))}
+                </tbody>
+                <tfoot>
+                  <tr className="border-t border-gray-200">
+                    <td className="pt-2.5 font-semibold text-[#0f172a]">Totaal</td>
+                    <td className="pt-2.5 text-right text-muted">{Object.values(cjData).reduce((s, d) => s + d.transacties, 0)}</td>
+                    <td className="pt-2.5 text-right text-muted">${Object.values(cjData).reduce((s, d) => s + d.omzet, 0).toFixed(2)}</td>
+                    <td className="pt-2.5 text-right font-semibold text-[#2D6A4F]">${Object.values(cjData).reduce((s, d) => s + d.commissie, 0).toFixed(2)}</td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
 
       {actieveTab === "transacties" && (
         <div className="space-y-6">
