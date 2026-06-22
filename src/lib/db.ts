@@ -122,6 +122,11 @@ export async function deleteAffiliateLink(id: number) {
   await sb.from("affiliate_links").delete().eq("id", id);
 }
 
+export async function updateAffiliateLink(id: number, data: { naam: string; url: string; platform?: string; categorie?: string; notities?: string }) {
+  const sb = getSupabase();
+  await sb.from("affiliate_links").update(data).eq("id", id);
+}
+
 // ─── Zoekwoorden ───────────────────────────────────────────
 
 export async function getZoekwoorden() {

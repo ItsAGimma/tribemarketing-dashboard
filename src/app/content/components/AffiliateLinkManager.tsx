@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { Pencil } from "lucide-react";
 import KpiCard from "@/components/KpiCard";
 import { logActie } from "@/lib/audit";
 
@@ -29,6 +30,7 @@ export default function AffiliateLinkManager() {
   const [links, setLinks] = useState<AffiliateLink[]>([]);
   const [formulier, setFormulier] = useState(lege);
   const [toonFormulier, setToonFormulier] = useState(false);
+  const [bewerkId, setBewerkId] = useState<number | null>(null);
   const [zoek, setZoek] = useState("");
   const [uitgeklapt, setUitgeklapt] = useState<number | null>(null);
   const [artikelFormulier, setArtikelFormulier] = useState<{ linkId: number | null } & typeof leegArtikel>({ linkId: null, ...leegArtikel });
@@ -41,17 +43,33 @@ export default function AffiliateLinkManager() {
     if (data.success) setLinks(data.data);
   }
 
+  function openBewerken(link: AffiliateLink) {
+    setBewerkId(link.id);
+    setFormulier({ naam: link.naam, url: link.url, platform: link.platform || "", categorie: link.categorie || "", notities: link.notities || "", toegevoegd_door: "Luciano" });
+    setToonFormulier(true);
+  }
+
   async function handleOpslaan(e: React.FormEvent) {
     e.preventDefault();
-    if (!formulier.toegevoegd_door) return;
-    const res = await fetch("/api/affiliate-links", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(formulier),
-    });
-    const json = await res.json();
-    await logActie("aangemaakt", "affiliate_links", json.id ?? "", formulier.naam, formulier.toegevoegd_door);
+    if (bewerkId) {
+      await fetch("/api/affiliate-links", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: bewerkId, ...formulier }),
+      });
+      await logActie("bewerkt", "affiliate_links", bewerkId, formulier.naam);
+    } else {
+      if (!formulier.toegevoegd_door) return;
+      const res = await fetch("/api/affiliate-links", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formulier),
+      });
+      const json = await res.json();
+      await logActie("aangemaakt", "affiliate_links", json.id ?? "", formulier.naam, formulier.toegevoegd_door);
+    }
     setFormulier(lege);
+    setBewerkId(null);
     setToonFormulier(false);
     laad();
   }
@@ -151,6 +169,7 @@ export default function AffiliateLinkManager() {
               <div className="flex items-center gap-3 shrink-0">
                 <span className="text-xs text-gray-400">{link.artikelen.length} {link.artikelen.length === 1 ? "artikel" : "artikelen"}</span>
                 <span className="text-gray-300 text-sm">{uitgeklapt === link.id ? "▲" : "▼"}</span>
+                <button onClick={(e) => { e.stopPropagation(); openBewerken(link); }} className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors"><Pencil size={14} /></button>
                 <button onClick={(e) => { e.stopPropagation(); handleVerwijder(link.id); }} className="btn-danger py-1 px-2 text-xs">🗑️</button>
               </div>
             </div>
@@ -212,9 +231,9 @@ export default function AffiliateLinkManager() {
 
     {/* Modal */}
     {toonFormulier && (
-      <div className="fixed inset-0 z-[200] flex items-center justify-center p-4" style={{ backgroundColor: "rgba(0,0,0,0.5)" }} onClick={() => setToonFormulier(false)}>
+      <div className="fixed inset-0 z-[200] flex items-center justify-center p-4" style={{ backgroundColor: "rgba(0,0,0,0.5)" }} onClick={() => { setToonFormulier(false); setBewerkId(null); setFormulier(lege); }}>
         <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg p-6" onClick={(e) => e.stopPropagation()}>
-          <h3 className="font-semibold text-gray-800 mb-5">Nieuwe affiliate link</h3>
+          <h3 className="font-semibold text-gray-800 mb-5">{bewerkId ? "Affiliate link bewerken" : "Nieuwe affiliate link"}</h3>
           <form onSubmit={handleOpslaan} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="label">Naam</label>
@@ -245,8 +264,8 @@ export default function AffiliateLinkManager() {
               </select>
             </div>
             <div className="col-span-2 flex gap-3 pt-1">
-              <button type="submit" className="btn-primary flex-1" disabled={!formulier.toegevoegd_door}>Toevoegen</button>
-              <button type="button" onClick={() => setToonFormulier(false)} className="btn-secondary flex-1">Annuleren</button>
+              <button type="submit" className="btn-primary flex-1" disabled={!bewerkId && !formulier.toegevoegd_door}>{bewerkId ? "Opslaan" : "Toevoegen"}</button>
+              <button type="button" onClick={() => { setToonFormulier(false); setBewerkId(null); setFormulier(lege); }} className="btn-secondary flex-1">Annuleren</button>
             </div>
           </form>
         </div>

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import {
   getAffiliateLinksMetArtikelen,
   createAffiliateLink,
+  updateAffiliateLink,
   deleteAffiliateLink,
   createAffiliateArtikel,
   deleteAffiliateArtikel,
@@ -35,6 +36,25 @@ export async function POST(req: NextRequest) {
     }
     const id = await createAffiliateLink(body);
     return NextResponse.json({ success: true, data: { id } });
+  } catch (error) {
+    return NextResponse.json({ success: false, error: String(error) }, { status: 500 });
+  }
+}
+
+export async function PATCH(req: NextRequest) {
+  try {
+    const body = await req.json();
+    if (!body.id || !body.naam || !body.url) {
+      return NextResponse.json({ success: false, error: "ID, naam en URL zijn verplicht" }, { status: 400 });
+    }
+    await updateAffiliateLink(Number(body.id), {
+      naam: body.naam,
+      url: body.url,
+      platform: body.platform || null,
+      categorie: body.categorie || null,
+      notities: body.notities || null,
+    });
+    return NextResponse.json({ success: true });
   } catch (error) {
     return NextResponse.json({ success: false, error: String(error) }, { status: 500 });
   }
