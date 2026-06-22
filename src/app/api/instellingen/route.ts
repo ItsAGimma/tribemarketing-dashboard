@@ -25,6 +25,8 @@ export async function POST(req: NextRequest) {
       "facebook_page_id",
       "tiktok_client_key",
       "tiktok_client_secret",
+      "cj_api_token",
+      "cj_publisher_cid",
     ];
     for (const key of keys) {
       if (body[key] !== undefined) {
