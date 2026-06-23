@@ -74,8 +74,14 @@ export async function getAffiliateLinks() {
   return data ?? [];
 }
 
+function generateToken(): string {
+  const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
+  return Array.from({ length: 8 }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
+}
+
 export async function createAffiliateLink(data: { naam: string; url: string; platform?: string; categorie?: string; notities?: string }) {
   const sb = getSupabase();
+  const token = generateToken();
   const { data: row } = await sb
     .from("affiliate_links")
     .insert({
@@ -84,10 +90,22 @@ export async function createAffiliateLink(data: { naam: string; url: string; pla
       platform: data.platform || null,
       categorie: data.categorie || null,
       notities: data.notities || null,
+      token,
     })
-    .select("id")
+    .select("id, token")
     .single();
-  return row?.id;
+  return row;
+}
+
+export async function logLinkKlik(affiliate_link_id: number, referrer: string | null, apparaat: string) {
+  const sb = getSupabase();
+  await sb.from("link_kliks").insert({ affiliate_link_id, referrer, apparaat });
+}
+
+export async function getLinkByToken(token: string) {
+  const sb = getSupabase();
+  const { data } = await sb.from("affiliate_links").select("id, url").eq("token", token).maybeSingle();
+  return data;
 }
 
 export async function getAffiliateLinksMetArtikelen() {

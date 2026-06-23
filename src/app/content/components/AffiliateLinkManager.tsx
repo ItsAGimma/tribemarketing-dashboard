@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Pencil } from "lucide-react";
+import { Pencil, Copy, Check } from "lucide-react";
 import KpiCard from "@/components/KpiCard";
 import { logActie } from "@/lib/audit";
 
@@ -13,10 +13,13 @@ interface Artikel {
   url: string;
 }
 
+const REDIRECT_BASE = "https://boekenvia.traveltribe.life";
+
 interface AffiliateLink {
   id: number;
   naam: string;
   url: string;
+  token: string | null;
   platform: string | null;
   categorie: string | null;
   notities: string | null;
@@ -30,6 +33,7 @@ const leegArtikel = { titel: "", url: "" };
 export default function AffiliateLinkManager() {
   const [links, setLinks] = useState<AffiliateLink[]>([]);
   const [platformen, setPlatformen] = useState<string[]>([]);
+  const [gekopieerd, setGekopieerd] = useState<number | null>(null);
   const [formulier, setFormulier] = useState(lege);
   const [toonFormulier, setToonFormulier] = useState(false);
   const [bewerkId, setBewerkId] = useState<number | null>(null);
@@ -48,6 +52,14 @@ export default function AffiliateLinkManager() {
     const res = await fetch("/api/affiliate-links");
     const data = await res.json();
     if (data.success) setLinks(data.data);
+  }
+
+  function kopieerRedirect(link: AffiliateLink, e: React.MouseEvent) {
+    e.stopPropagation();
+    if (!link.token) return;
+    navigator.clipboard.writeText(`${REDIRECT_BASE}/${link.token}`);
+    setGekopieerd(link.id);
+    setTimeout(() => setGekopieerd(null), 2000);
   }
 
   function openBewerken(link: AffiliateLink) {
@@ -171,11 +183,21 @@ export default function AffiliateLinkManager() {
                 <a href={link.url} target="_blank" rel="noopener noreferrer" className="text-xs text-brand-500 hover:underline truncate block max-w-lg" onClick={(e) => e.stopPropagation()}>
                   {link.url}
                 </a>
+                {link.token && (
+                  <p className="text-xs text-[#185FA5] mt-0.5 truncate max-w-lg">
+                    ↗ {REDIRECT_BASE}/{link.token}
+                  </p>
+                )}
                 {link.notities && <p className="text-xs text-gray-400 mt-0.5">{link.notities}</p>}
               </div>
               <div className="flex items-center gap-3 shrink-0">
                 <span className="text-xs text-gray-400">{link.artikelen.length} {link.artikelen.length === 1 ? "artikel" : "artikelen"}</span>
                 <span className="text-gray-300 text-sm">{uitgeklapt === link.id ? "▲" : "▼"}</span>
+                {link.token && (
+                  <button onClick={(e) => kopieerRedirect(link, e)} className="p-1.5 rounded-lg text-gray-400 hover:text-[#185FA5] hover:bg-blue-50 transition-colors" title="Kopieer redirect URL">
+                    {gekopieerd === link.id ? <Check size={14} className="text-green-500" /> : <Copy size={14} />}
+                  </button>
+                )}
                 <button onClick={(e) => { e.stopPropagation(); openBewerken(link); }} className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors"><Pencil size={14} /></button>
                 <button onClick={(e) => { e.stopPropagation(); handleVerwijder(link.id); }} className="btn-danger py-1 px-2 text-xs">🗑️</button>
               </div>

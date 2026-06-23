@@ -34,8 +34,8 @@ export async function POST(req: NextRequest) {
     if (!body.naam || !body.url) {
       return NextResponse.json({ success: false, error: "Naam en URL zijn verplicht" }, { status: 400 });
     }
-    const id = await createAffiliateLink(body);
-    return NextResponse.json({ success: true, data: { id } });
+    const row = await createAffiliateLink(body);
+    return NextResponse.json({ success: true, data: { id: row?.id, token: row?.token } });
   } catch (error) {
     return NextResponse.json({ success: false, error: String(error) }, { status: 500 });
   }
