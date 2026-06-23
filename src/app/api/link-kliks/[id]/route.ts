@@ -1,0 +1,56 @@
+import { NextRequest, NextResponse } from "next/server";
+import { getSupabase } from "@/lib/supabase";
+
+export const dynamic = "force-dynamic";
+
+export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
+  try {
+    const sb = getSupabase();
+    const id = Number(params.id);
+
+    const { data: link } = await sb
+      .from("affiliate_links")
+      .select("id, naam, platform, token, url")
+      .eq("id", id)
+      .single();
+
+    if (!link) return NextResponse.json({ success: false, error: "Niet gevonden" }, { status: 404 });
+
+    const { data: kliks } = await sb
+      .from("link_kliks")
+      .select("referrer, apparaat, aangemaakt_op")
+      .eq("affiliate_link_id", id)
+      .order("aangemaakt_op", { ascending: false });
+
+    const lijst = kliks ?? [];
+
+    const referrers: Record<string, { count: number; laatste: string }> = {};
+    for (const k of lijst) {
+      if (k.referrer) {
+        let slug = k.referrer;
+        try { slug = new URL(k.referrer).pathname.replace(/\/$/, "").split("/").pop() || k.referrer; } catch {}
+        if (!referrers[slug]) referrers[slug] = { count: 0, laatste: k.aangemaakt_op };
+        referrers[slug].count += 1;
+        if (k.aangemaakt_op > referrers[slug].laatste) referrers[slug].laatste = k.aangemaakt_op;
+      }
+    }
+
+    const mobiel = lijst.filter(k => k.apparaat === "mobiel").length;
+
+    return NextResponse.json({
+      success: true,
+      link,
+      kliks: lijst.length,
+      mobiel,
+      desktop: lijst.length - mobiel,
+      referrers,
+      recent: lijst.slice(0, 50).map(k => {
+        let slug = k.referrer ?? "—";
+        try { if (k.referrer) slug = new URL(k.referrer).pathname.replace(/\/$/, "").split("/").pop() || k.referrer; } catch {}
+        return { tijdstip: k.aangemaakt_op, artikel: slug, apparaat: k.apparaat };
+      }),
+    });
+  } catch (error) {
+    return NextResponse.json({ success: false, error: String(error) }, { status: 500 });
+  }
+}

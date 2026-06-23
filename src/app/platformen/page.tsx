@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Globe, Link2, TrendingUp, DollarSign } from "lucide-react";
 import Tabs from "@/components/Tabs";
 import AffiliatePlatforms from "@/app/content/components/AffiliatePlatforms";
@@ -20,6 +21,7 @@ export default function AffiliatePage() {
   const [cjFout, setCjFout] = useState<string | null>(null);
   const [klikData, setKlikData] = useState<{ id: number; naam: string; platform: string | null; token: string | null; kliks: number; mobiel: number; desktop: number; referrers: Record<string, number> }[] | null>(null);
   const [uitgeklapt, setUitgeklapt] = useState<number | null>(null);
+  const router = useRouter();
 
   useEffect(() => {
     fetch("/api/cj-commissions").then(r => r.json()).then(d => {
@@ -71,7 +73,7 @@ export default function AffiliatePage() {
                       <th className="text-right py-3 px-4 text-xs font-medium text-muted">Kliks</th>
                       <th className="text-right py-3 px-4 text-xs font-medium text-muted">Mobiel</th>
                       <th className="text-right py-3 px-4 text-xs font-medium text-muted">Desktop</th>
-                      <th className="py-3 px-4 w-8"></th>
+                      <th className="py-3 px-4 w-8 text-right text-xs font-medium text-muted">Detail</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -88,7 +90,14 @@ export default function AffiliatePage() {
                           <td className="py-3 px-4 text-right font-medium">{link.kliks}</td>
                           <td className="py-3 px-4 text-right text-muted">{Math.round(link.mobiel / link.kliks * 100)}%</td>
                           <td className="py-3 px-4 text-right text-muted">{Math.round(link.desktop / link.kliks * 100)}%</td>
-                          <td className="py-3 px-4 text-center text-gray-300">{uitgeklapt === link.id ? "▲" : "▼"}</td>
+                          <td className="py-3 px-4 text-right">
+                            <button
+                              onClick={(e) => { e.stopPropagation(); router.push(`/platformen/link/${link.id}`); }}
+                              className="text-xs text-[#185FA5] hover:underline"
+                            >
+                              Details →
+                            </button>
+                          </td>
                         </tr>
                         {uitgeklapt === link.id && (
                           <tr className="bg-gray-50/50">
