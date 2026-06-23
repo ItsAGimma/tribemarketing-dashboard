@@ -29,6 +29,7 @@ const leegArtikel = { titel: "", url: "" };
 
 export default function AffiliateLinkManager() {
   const [links, setLinks] = useState<AffiliateLink[]>([]);
+  const [platformen, setPlatformen] = useState<string[]>([]);
   const [formulier, setFormulier] = useState(lege);
   const [toonFormulier, setToonFormulier] = useState(false);
   const [bewerkId, setBewerkId] = useState<number | null>(null);
@@ -36,7 +37,12 @@ export default function AffiliateLinkManager() {
   const [uitgeklapt, setUitgeklapt] = useState<number | null>(null);
   const [artikelFormulier, setArtikelFormulier] = useState<{ linkId: number | null } & typeof leegArtikel>({ linkId: null, ...leegArtikel });
 
-  useEffect(() => { laad(); }, []);
+  useEffect(() => {
+    laad();
+    fetch("/api/affiliate-platforms").then(r => r.json()).then(d => {
+      if (d.success) setPlatformen((d.data as { naam: string; actief: boolean }[]).filter(p => p.actief).map(p => p.naam));
+    });
+  }, []);
 
   async function laad() {
     const res = await fetch("/api/affiliate-links");
@@ -230,7 +236,10 @@ export default function AffiliateLinkManager() {
             </div>
             <div>
               <label className="label">Platform</label>
-              <input type="text" className="input" placeholder="bijv. Booking.com" value={formulier.platform} onChange={(e) => setFormulier((p) => ({ ...p, platform: e.target.value }))} />
+              <select className="input" value={formulier.platform} onChange={(e) => setFormulier((p) => ({ ...p, platform: e.target.value }))}>
+                <option value="">Selecteer platform...</option>
+                {platformen.map(naam => <option key={naam} value={naam}>{naam}</option>)}
+              </select>
             </div>
             <div className="col-span-2">
               <label className="label">Affiliate URL</label>
