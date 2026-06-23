@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { Globe, Link2, TrendingUp, DollarSign } from "lucide-react";
 import Tabs from "@/components/Tabs";
 import AffiliatePlatforms from "@/app/content/components/AffiliatePlatforms";
@@ -76,10 +76,9 @@ export default function AffiliatePage() {
                   </thead>
                   <tbody>
                     {klikData.filter(l => l.kliks > 0).sort((a, b) => b.kliks - a.kliks).map((link) => (
-                      <>
+                      <React.Fragment key={link.id}>
                         <tr
-                          key={link.id}
-                          className="border-b border-gray-50 last:border-0 cursor-pointer hover:bg-gray-50/50 transition-colors"
+                          className="border-b border-gray-50 cursor-pointer hover:bg-gray-50/50 transition-colors"
                           onClick={() => setUitgeklapt(uitgeklapt === link.id ? null : link.id)}
                         >
                           <td className="py-3 px-4">
@@ -87,26 +86,32 @@ export default function AffiliatePage() {
                             {link.platform && <p className="text-xs text-muted">{link.platform}</p>}
                           </td>
                           <td className="py-3 px-4 text-right font-medium">{link.kliks}</td>
-                          <td className="py-3 px-4 text-right text-muted">{link.kliks > 0 ? Math.round(link.mobiel / link.kliks * 100) : 0}%</td>
-                          <td className="py-3 px-4 text-right text-muted">{link.kliks > 0 ? Math.round(link.desktop / link.kliks * 100) : 0}%</td>
+                          <td className="py-3 px-4 text-right text-muted">{Math.round(link.mobiel / link.kliks * 100)}%</td>
+                          <td className="py-3 px-4 text-right text-muted">{Math.round(link.desktop / link.kliks * 100)}%</td>
                           <td className="py-3 px-4 text-center text-gray-300">{uitgeklapt === link.id ? "▲" : "▼"}</td>
                         </tr>
-                        {uitgeklapt === link.id && Object.keys(link.referrers).length > 0 && (
-                          <tr key={`${link.id}-detail`} className="border-b border-gray-50 bg-gray-50/50">
+                        {uitgeklapt === link.id && (
+                          <tr className="bg-gray-50/50">
                             <td colSpan={5} className="px-4 py-3">
-                              <p className="text-xs font-medium text-muted mb-2">Kliks per artikel</p>
-                              <div className="space-y-1">
-                                {Object.entries(link.referrers).sort((a, b) => b[1] - a[1]).map(([slug, count]) => (
-                                  <div key={slug} className="flex items-center justify-between text-xs">
-                                    <span className="text-[#0f172a] truncate max-w-xs">{slug}</span>
-                                    <span className="text-muted ml-4 shrink-0">{count} {count === 1 ? "klik" : "kliks"}</span>
+                              {Object.keys(link.referrers).length === 0 ? (
+                                <p className="text-xs text-muted">Geen artikeldata beschikbaar.</p>
+                              ) : (
+                                <>
+                                  <p className="text-xs font-medium text-muted mb-2">Kliks per artikel</p>
+                                  <div className="space-y-1">
+                                    {Object.entries(link.referrers).sort((a, b) => b[1] - a[1]).map(([slug, count]) => (
+                                      <div key={slug} className="flex items-center justify-between text-xs">
+                                        <span className="text-[#0f172a] truncate max-w-xs">{slug}</span>
+                                        <span className="text-muted ml-4 shrink-0">{count} {count === 1 ? "klik" : "kliks"}</span>
+                                      </div>
+                                    ))}
                                   </div>
-                                ))}
-                              </div>
+                                </>
+                              )}
                             </td>
                           </tr>
                         )}
-                      </>
+                      </React.Fragment>
                     ))}
                   </tbody>
                 </table>
