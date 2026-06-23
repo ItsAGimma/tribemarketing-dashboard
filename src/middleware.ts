@@ -2,6 +2,14 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 export async function middleware(request: NextRequest) {
+  const hostname = request.headers.get("host") ?? "";
+  if (hostname.startsWith("boekenvia.")) {
+    const token = request.nextUrl.pathname.replace(/^\//, "");
+    if (token) {
+      return NextResponse.rewrite(new URL(`/go/${token}`, request.url));
+    }
+  }
+
   let supabaseResponse = NextResponse.next({ request });
 
   const supabase = createServerClient(
