@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Pencil, Copy, Check } from "lucide-react";
+import { Pencil, Copy, Check, Trash2, ChevronDown, ChevronUp } from "lucide-react";
 import KpiCard from "@/components/KpiCard";
 import { logActie } from "@/lib/audit";
 
@@ -180,26 +180,22 @@ export default function AffiliateLinkManager() {
                   {link.platform && <span className="badge bg-brand-50 text-brand-600">{link.platform}</span>}
                   {link.categorie && <span className="badge bg-gray-100 text-gray-600">{link.categorie}</span>}
                 </div>
-                <a href={link.url} target="_blank" rel="noopener noreferrer" className="text-xs text-brand-500 hover:underline truncate block max-w-lg" onClick={(e) => e.stopPropagation()}>
-                  {link.url}
-                </a>
                 {link.token && (
-                  <p className="text-xs text-[#185FA5] mt-0.5 truncate max-w-lg">
-                    ↗ {REDIRECT_BASE}/{link.token}
-                  </p>
+                  <p className="text-xs text-muted mt-0.5">{REDIRECT_BASE}/{link.token}</p>
                 )}
-                {link.notities && <p className="text-xs text-gray-400 mt-0.5">{link.notities}</p>}
               </div>
-              <div className="flex items-center gap-3 shrink-0">
-                <span className="text-xs text-gray-400">{link.artikelen.length} {link.artikelen.length === 1 ? "artikel" : "artikelen"}</span>
-                <span className="text-gray-300 text-sm">{uitgeklapt === link.id ? "▲" : "▼"}</span>
+              <div className="flex items-center gap-1 shrink-0">
+                <span className="text-xs text-muted mr-2">{link.artikelen.length} {link.artikelen.length === 1 ? "artikel" : "artikelen"}</span>
                 {link.token && (
                   <button onClick={(e) => kopieerRedirect(link, e)} className="p-1.5 rounded-lg text-gray-400 hover:text-[#185FA5] hover:bg-blue-50 transition-colors" title="Kopieer redirect URL">
                     {gekopieerd === link.id ? <Check size={14} className="text-green-500" /> : <Copy size={14} />}
                   </button>
                 )}
                 <button onClick={(e) => { e.stopPropagation(); openBewerken(link); }} className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors"><Pencil size={14} /></button>
-                <button onClick={(e) => { e.stopPropagation(); handleVerwijder(link.id); }} className="btn-danger py-1 px-2 text-xs">🗑️</button>
+                <button onClick={(e) => { e.stopPropagation(); handleVerwijder(link.id); }} className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"><Trash2 size={14} /></button>
+                <div className="w-5 flex justify-center text-gray-400">
+                  {uitgeklapt === link.id ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
+                </div>
               </div>
             </div>
 
