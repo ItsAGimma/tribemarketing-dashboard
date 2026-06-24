@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Home, Layout, BarChart2, DollarSign, FileText, Settings, LogOut, Menu, X, CheckSquare, Globe, Shield, Link2 } from "lucide-react";
+import { Home, Layout, BarChart2, DollarSign, FileText, Settings, LogOut, Menu, X, CheckSquare, Globe, Shield, Link2, Newspaper } from "lucide-react";
 import { getSupabaseBrowser } from "@/lib/supabase-browser";
 import { useState, useEffect } from "react";
 
@@ -17,6 +17,12 @@ const navGroups = [
     label: "Content",
     items: [
       { href: "/content", label: "Content Hub", icon: Layout },
+    ],
+  },
+  {
+    label: "Analytics",
+    items: [
+      { href: "/artikelen", label: "Artikelen", icon: Newspaper },
       { href: "/analytics", label: "Analytics", icon: BarChart2 },
     ],
   },

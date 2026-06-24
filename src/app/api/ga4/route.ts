@@ -1,9 +1,19 @@
 import { NextResponse } from "next/server";
-import { BetaAnalyticsDataClient } from "@google-analytics/data";
+import { JWT } from "google-auth-library";
 import { getSupabase } from "@/lib/supabase";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 30;
+
+async function getGa4AccessToken(credentials: { client_email: string; private_key: string }) {
+  const auth = new JWT({
+    email: credentials.client_email,
+    key: credentials.private_key,
+    scopes: ["https://www.googleapis.com/auth/analytics.readonly"],
+  });
+  const { token } = await auth.getAccessToken();
+  return token;
+}
 
 export async function GET() {
   try {
@@ -15,46 +25,59 @@ export async function GET() {
     }
 
     const credentials = JSON.parse(rawJson);
-    const client = new BetaAnalyticsDataClient({ credentials });
+    const accessToken = await getGa4AccessToken(credentials);
 
-    const [response] = await client.runReport({
-      property: `properties/${propertyId}`,
-      dimensions: [{ name: "pagePath" }],
-      metrics: [{ name: "screenPageViews" }],
-      dateRanges: [{ startDate: "30daysAgo", endDate: "today" }],
-      limit: 1000,
-    });
+    const res = await fetch(
+      `https://analyticsdata.googleapis.com/v1beta/properties/${propertyId}:runReport`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          dimensions: [{ name: "pagePath" }],
+          metrics: [{ name: "screenPageViews" }],
+          dateRanges: [{ startDate: "30daysAgo", endDate: "today" }],
+          limit: 1000,
+        }),
+        signal: AbortSignal.timeout(15000),
+      }
+    );
+
+    if (!res.ok) {
+      const body = await res.text().catch(() => "");
+      return NextResponse.json({ success: false, error: `GA4 API fout: ${res.status}`, detail: body });
+    }
+
+    const json = await res.json();
 
     // Views per pagePath
     const viewsPerPad: Record<string, number> = {};
-    for (const row of response.rows ?? []) {
-      const pad = row.dimensionValues?.[0]?.value ?? "";
+    for (const row of json.rows ?? []) {
+      const pad: string = row.dimensionValues?.[0]?.value ?? "";
       const views = parseInt(row.metricValues?.[0]?.value ?? "0", 10);
       if (pad && pad !== "(not set)") viewsPerPad[pad] = views;
     }
 
-    // Haal artikelen op uit database
+    // Haal artikelen en klikdata op uit database
     const sb = getSupabase();
-    const { data: artikelen } = await sb
-      .from("affiliate_artikelen")
-      .select("id, titel, url, affiliate_link_id");
+    const [{ data: artikelen }, { data: kliks }] = await Promise.all([
+      sb.from("affiliate_artikelen").select("id, titel, url, affiliate_link_id"),
+      sb.from("link_kliks").select("referrer"),
+    ]);
 
-    // Haal klikdata op per link (voor clicks per artikel via referrer)
-    const { data: kliks } = await sb
-      .from("link_kliks")
-      .select("affiliate_link_id, referrer");
-
-    // Bouw clicks per artikel-URL op via referrer
-    const clicksPerArtikelUrl: Record<string, number> = {};
+    // Clicks per artikel-URL via referrer
+    const clicksPerPad: Record<string, number> = {};
     for (const k of kliks ?? []) {
       if (!k.referrer) continue;
       try {
         const pad = new URL(k.referrer).pathname.replace(/\/$/, "");
-        clicksPerArtikelUrl[pad] = (clicksPerArtikelUrl[pad] ?? 0) + 1;
+        clicksPerPad[pad] = (clicksPerPad[pad] ?? 0) + 1;
       } catch {}
     }
 
-    // Combineer per artikel
+    // Combineer per artikel (dedup op pad)
     const gezien = new Set<string>();
     const data = (artikelen ?? [])
       .filter((a) => {
@@ -69,17 +92,18 @@ export async function GET() {
         let pad = "";
         try { pad = new URL(a.url).pathname.replace(/\/$/, ""); } catch {}
         const views = viewsPerPad[pad] ?? 0;
-        const clicks = clicksPerArtikelUrl[pad] ?? 0;
-        const ctr = views > 0 ? clicks / views : 0;
-        return { id: a.id, titel: a.titel, url: a.url, pad, views, clicks, ctr };
+        const clicks = clicksPerPad[pad] ?? 0;
+        return { id: a.id, titel: a.titel, url: a.url, pad, views, clicks, ctr: views > 0 ? clicks / views : 0 };
       })
       .filter((a) => a.views > 0 || a.clicks > 0)
       .sort((a, b) => b.views - a.views);
 
-    const totaalViews = data.reduce((s, a) => s + a.views, 0);
-    const totaalClicks = data.reduce((s, a) => s + a.clicks, 0);
-
-    return NextResponse.json({ success: true, data, totaalViews, totaalClicks });
+    return NextResponse.json({
+      success: true,
+      data,
+      totaalViews: data.reduce((s, a) => s + a.views, 0),
+      totaalClicks: data.reduce((s, a) => s + a.clicks, 0),
+    });
   } catch (error) {
     return NextResponse.json({ success: false, error: String(error) }, { status: 500 });
   }
