@@ -1,6 +1,32 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabase } from "@/lib/supabase";
 import { getCjCommissiesPerLink } from "@/lib/db";
+import { JWT } from "google-auth-library";
+
+async function getGa4Views(paden: string[]): Promise<number> {
+  try {
+    const rawJson = process.env.GA4_SERVICE_ACCOUNT_JSON;
+    const propertyId = process.env.GA4_PROPERTY_ID;
+    if (!rawJson || !propertyId || paden.length === 0) return 0;
+    const credentials = JSON.parse(rawJson);
+    const auth = new JWT({ email: credentials.client_email, key: credentials.private_key, scopes: ["https://www.googleapis.com/auth/analytics.readonly"] });
+    const { token } = await auth.getAccessToken();
+    const res = await fetch(`https://analyticsdata.googleapis.com/v1beta/properties/${propertyId}:runReport`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        dimensions: [{ name: "pagePath" }],
+        metrics: [{ name: "screenPageViews" }],
+        dateRanges: [{ startDate: "30daysAgo", endDate: "today" }],
+        dimensionFilter: { filter: { fieldName: "pagePath", inListFilter: { values: paden } } },
+      }),
+      signal: AbortSignal.timeout(10000),
+    });
+    if (!res.ok) return 0;
+    const json = await res.json();
+    return (json.rows ?? []).reduce((s: number, r: { metricValues: { value: string }[] }) => s + parseInt(r.metricValues?.[0]?.value ?? "0", 10), 0);
+  } catch { return 0; }
+}
 
 export const dynamic = "force-dynamic";
 
@@ -37,7 +63,14 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
     }
 
     const mobiel = lijst.filter(k => k.apparaat === "mobiel").length;
-    const cjData = await getCjCommissiesPerLink();
+
+    const { data: artikelen } = await sb.from("affiliate_artikelen").select("url").eq("affiliate_link_id", id);
+    const artikelPaden = (artikelen ?? []).map(a => { try { return new URL(a.url).pathname.replace(/\/$/, ""); } catch { return ""; } }).filter(Boolean);
+
+    const [cjData, views] = await Promise.all([
+      getCjCommissiesPerLink(),
+      getGa4Views(artikelPaden),
+    ]);
     const cjLink = cjData[id] ?? { conversies: 0, commissie_usd: 0 };
 
     return NextResponse.json({
@@ -48,6 +81,7 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
       desktop: lijst.length - mobiel,
       conversies: cjLink.conversies,
       commissie_usd: cjLink.commissie_usd,
+      views,
       referrers,
       recent: lijst.slice(0, 50).map(k => {
         let slug = k.referrer ?? "—";

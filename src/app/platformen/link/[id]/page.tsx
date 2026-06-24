@@ -11,6 +11,7 @@ interface Detail {
   kliks: number;
   mobiel: number;
   desktop: number;
+  views: number;
   conversies: number;
   commissie_usd: number;
   referrers: Record<string, { count: number; laatste: string }>;
@@ -44,7 +45,8 @@ export default function LinkDetailPage() {
   if (fout) return <div className="card"><p className="text-sm text-muted">{fout}</p></div>;
   if (!data) return <div className="card"><p className="text-sm text-muted">Laden...</p></div>;
 
-  const { link, kliks, mobiel, desktop, referrers, recent, conversies, commissie_usd } = data;
+  const { link, kliks, mobiel, desktop, views, referrers, recent, conversies, commissie_usd } = data;
+  const ctr = views > 0 && kliks > 0 ? `${((kliks / views) * 100).toFixed(1)}%` : "—";
   const conversie = kliks > 0 && conversies > 0 ? `${((conversies / kliks) * 100).toFixed(1)}%` : "—";
 
   return (
@@ -67,6 +69,8 @@ export default function LinkDetailPage() {
           {[
             { label: "Totaal kliks", val: kliks, groen: false },
             { label: "Mobiel", val: `${kliks > 0 ? Math.round(mobiel / kliks * 100) : 0}%`, groen: false },
+            { label: "Views", val: views > 0 ? views.toLocaleString("nl-NL") : "—", groen: false },
+            { label: "CTR", val: ctr, groen: false },
             { label: "CJ conversies", val: conversies > 0 ? String(conversies) : "—", groen: false },
             { label: "Commissie", val: commissie_usd > 0 ? `$${commissie_usd.toFixed(2)}` : "—", groen: true },
           ].map(({ label, val, groen }) => (

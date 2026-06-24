@@ -3,9 +3,8 @@
 import { useState } from "react";
 
 interface ArtikelRij {
-  id: number;
+  pad: string;
   titel: string;
-  url: string;
   views: number;
   clicks: number;
   ctr: number;
@@ -86,11 +85,10 @@ export default function ArtikelenPage() {
                 </thead>
                 <tbody>
                   {data.map((artikel) => (
-                    <tr key={artikel.id} className="border-b border-gray-50 last:border-0 hover:bg-gray-50/50 transition-colors">
+                    <tr key={artikel.pad} className="border-b border-gray-50 last:border-0 hover:bg-gray-50/50 transition-colors">
                       <td className="py-3 px-4">
-                        <a href={artikel.url} target="_blank" rel="noopener noreferrer" className="font-medium text-[#0f172a] hover:text-[#185FA5] hover:underline">
-                          {artikel.titel}
-                        </a>
+                        <span className="font-medium text-[#0f172a]">{artikel.titel}</span>
+                        <p className="text-xs text-muted mt-0.5">{artikel.pad}</p>
                       </td>
                       <td className="py-3 px-4 text-right text-muted">{artikel.views.toLocaleString("nl-NL")}</td>
                       <td className="py-3 px-4 text-right text-muted">{artikel.clicks}</td>
