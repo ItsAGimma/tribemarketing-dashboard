@@ -55,7 +55,7 @@ export async function GET() {
     // Views per pagePath
     const viewsPerPad: Record<string, number> = {};
     for (const row of json.rows ?? []) {
-      const pad: string = row.dimensionValues?.[0]?.value ?? "";
+      const pad: string = (row.dimensionValues?.[0]?.value ?? "").replace(/\/$/, "");
       const views = parseInt(row.metricValues?.[0]?.value ?? "0", 10);
       if (pad && pad !== "(not set)") viewsPerPad[pad] = views;
     }
