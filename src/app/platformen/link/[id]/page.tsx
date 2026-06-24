@@ -11,6 +11,8 @@ interface Detail {
   kliks: number;
   mobiel: number;
   desktop: number;
+  conversies: number;
+  commissie_usd: number;
   referrers: Record<string, { count: number; laatste: string }>;
   recent: { tijdstip: string; artikel: string; apparaat: string }[];
 }
@@ -42,8 +44,8 @@ export default function LinkDetailPage() {
   if (fout) return <div className="card"><p className="text-sm text-muted">{fout}</p></div>;
   if (!data) return <div className="card"><p className="text-sm text-muted">Laden...</p></div>;
 
-  const { link, kliks, mobiel, desktop, referrers, recent } = data;
-  const conversie = "—";
+  const { link, kliks, mobiel, desktop, referrers, recent, conversies, commissie_usd } = data;
+  const conversie = kliks > 0 && conversies > 0 ? `${((conversies / kliks) * 100).toFixed(1)}%` : "—";
 
   return (
     <div className="max-w-3xl space-y-5">
@@ -65,8 +67,8 @@ export default function LinkDetailPage() {
           {[
             { label: "Totaal kliks", val: kliks, groen: false },
             { label: "Mobiel", val: `${kliks > 0 ? Math.round(mobiel / kliks * 100) : 0}%`, groen: false },
-            { label: "CJ transacties", val: "—", groen: false },
-            { label: "Conversie", val: conversie, groen: true },
+            { label: "CJ conversies", val: conversies > 0 ? String(conversies) : "—", groen: false },
+            { label: "Commissie", val: commissie_usd > 0 ? `$${commissie_usd.toFixed(2)}` : "—", groen: true },
           ].map(({ label, val, groen }) => (
             <div key={label} className="p-4">
               <p className="text-xs text-muted mb-1">{label}</p>

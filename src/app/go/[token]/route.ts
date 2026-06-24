@@ -16,5 +16,13 @@ export async function GET(req: NextRequest, { params }: { params: { token: strin
 
   logLinkKlik(link.id, referrer, apparaat);
 
-  return NextResponse.redirect(link.url, { status: 307 });
+  // Inject token als SubID zodat CJ conversies terugkoppelbaar zijn aan deze link
+  let doelUrl = link.url;
+  try {
+    const url = new URL(link.url);
+    url.searchParams.set("sid", params.token);
+    doelUrl = url.toString();
+  } catch {}
+
+  return NextResponse.redirect(doelUrl, { status: 307 });
 }

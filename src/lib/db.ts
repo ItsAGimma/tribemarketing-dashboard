@@ -145,6 +145,38 @@ export async function updateAffiliateLink(id: number, data: { naam: string; url:
   await sb.from("affiliate_links").update(data).eq("id", id);
 }
 
+// ─── CJ Commissies ─────────────────────────────────────────
+
+export async function saveCjCommissies(commissies: {
+  commission_id: string;
+  affiliate_link_id: number | null;
+  adverteerder: string;
+  commissie_usd: number;
+  omzet_usd: number;
+  status: string;
+  posting_date: string;
+}[]) {
+  if (commissies.length === 0) return;
+  const sb = getSupabase();
+  await sb.from("cj_commissies").upsert(commissies, { onConflict: "commission_id", ignoreDuplicates: true });
+}
+
+export async function getCjCommissiesPerLink(): Promise<Record<number, { conversies: number; commissie_usd: number }>> {
+  const sb = getSupabase();
+  const { data } = await sb
+    .from("cj_commissies")
+    .select("affiliate_link_id, commissie_usd")
+    .not("affiliate_link_id", "is", null);
+  const result: Record<number, { conversies: number; commissie_usd: number }> = {};
+  for (const r of data ?? []) {
+    if (!r.affiliate_link_id) continue;
+    if (!result[r.affiliate_link_id]) result[r.affiliate_link_id] = { conversies: 0, commissie_usd: 0 };
+    result[r.affiliate_link_id].conversies += 1;
+    result[r.affiliate_link_id].commissie_usd += parseFloat(r.commissie_usd ?? "0");
+  }
+  return result;
+}
+
 // ─── Zoekwoorden ───────────────────────────────────────────
 
 export async function getZoekwoorden() {

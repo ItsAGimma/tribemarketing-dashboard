@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabase } from "@/lib/supabase";
+import { getCjCommissiesPerLink } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
@@ -36,6 +37,8 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
     }
 
     const mobiel = lijst.filter(k => k.apparaat === "mobiel").length;
+    const cjData = await getCjCommissiesPerLink();
+    const cjLink = cjData[id] ?? { conversies: 0, commissie_usd: 0 };
 
     return NextResponse.json({
       success: true,
@@ -43,6 +46,8 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
       kliks: lijst.length,
       mobiel,
       desktop: lijst.length - mobiel,
+      conversies: cjLink.conversies,
+      commissie_usd: cjLink.commissie_usd,
       referrers,
       recent: lijst.slice(0, 50).map(k => {
         let slug = k.referrer ?? "—";
