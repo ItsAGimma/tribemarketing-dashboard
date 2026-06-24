@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Globe, Link2, TrendingUp, DollarSign } from "lucide-react";
+import { Globe, Link2, TrendingUp, DollarSign, FileText } from "lucide-react";
 import Tabs from "@/components/Tabs";
 import AffiliatePlatforms from "@/app/content/components/AffiliatePlatforms";
 import AffiliateLinkManager from "@/app/content/components/AffiliateLinkManager";
@@ -12,6 +12,7 @@ const tabs = [
   { id: "links", label: "Links", icon: Link2 },
   { id: "prestaties", label: "Prestaties", icon: TrendingUp },
   { id: "commissies", label: "Commissies", icon: DollarSign },
+  { id: "artikelen", label: "Artikelen", icon: FileText },
 ];
 
 export default function AffiliatePage() {
@@ -21,6 +22,9 @@ export default function AffiliatePage() {
   const [cjFout, setCjFout] = useState<string | null>(null);
   const [klikData, setKlikData] = useState<{ id: number; naam: string; platform: string | null; token: string | null; kliks: number; mobiel: number; desktop: number; referrers: Record<string, number> }[] | null>(null);
   const [uitgeklapt, setUitgeklapt] = useState<number | null>(null);
+  const [ga4Data, setGa4Data] = useState<{ id: number; titel: string; url: string; views: number; clicks: number; ctr: number }[] | null>(null);
+  const [ga4Fout, setGa4Fout] = useState<string | null>(null);
+  const [ga4Laden, setGa4Laden] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -190,6 +194,87 @@ export default function AffiliatePage() {
                   </tfoot>
                 </table>
               </div>
+            </>
+          )}
+        </div>
+      )}
+
+      {actieveTab === "artikelen" && (
+        <div className="space-y-4">
+          {!ga4Data && !ga4Fout && !ga4Laden && (
+            <div className="card text-center py-10">
+              <p className="text-sm text-muted mb-4">Haal GA4 artikeldata op voor de afgelopen 30 dagen.</p>
+              <button
+                className="btn-primary"
+                onClick={() => {
+                  setGa4Laden(true);
+                  fetch("/api/ga4").then(r => r.json()).then(d => {
+                    if (d.success) setGa4Data(d.data);
+                    else setGa4Fout(d.error);
+                  }).catch(e => setGa4Fout(String(e))).finally(() => setGa4Laden(false));
+                }}
+              >
+                Ophalen
+              </button>
+            </div>
+          )}
+          {ga4Laden && <div className="card"><p className="text-sm text-muted">Laden...</p></div>}
+          {ga4Fout && <div className="card"><p className="text-sm text-red-500">{ga4Fout}</p></div>}
+          {ga4Data && (
+            <>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                <div className="rounded-xl p-4" style={{ background: "var(--color-background-secondary, #f8f9fb)" }}>
+                  <p className="text-xs text-muted mb-1">Totale views</p>
+                  <p className="text-xl font-medium">{ga4Data.reduce((s, a) => s + a.views, 0).toLocaleString("nl-NL")}</p>
+                </div>
+                <div className="rounded-xl p-4" style={{ background: "var(--color-background-secondary, #f8f9fb)" }}>
+                  <p className="text-xs text-muted mb-1">Totale clicks</p>
+                  <p className="text-xl font-medium">{ga4Data.reduce((s, a) => s + a.clicks, 0)}</p>
+                </div>
+                <div className="rounded-xl p-4" style={{ background: "var(--color-background-secondary, #f8f9fb)" }}>
+                  <p className="text-xs text-muted mb-1">Gem. CTR</p>
+                  <p className="text-xl font-medium">
+                    {(() => {
+                      const totViews = ga4Data.reduce((s, a) => s + a.views, 0);
+                      const totClicks = ga4Data.reduce((s, a) => s + a.clicks, 0);
+                      return totViews > 0 ? `${((totClicks / totViews) * 100).toFixed(1)}%` : "—";
+                    })()}
+                  </p>
+                </div>
+              </div>
+
+              {ga4Data.length === 0 ? (
+                <div className="card"><p className="text-sm text-muted">Geen artikeldata gevonden. Controleer of de artikel-URLs overeenkomen met de pagepaths in GA4.</p></div>
+              ) : (
+                <div className="card p-0 overflow-x-auto">
+                  <table className="w-full text-sm min-w-[480px]">
+                    <thead>
+                      <tr className="border-b border-gray-100">
+                        <th className="text-left py-3 px-4 text-xs font-medium text-muted">Artikel</th>
+                        <th className="text-right py-3 px-4 text-xs font-medium text-muted">Views</th>
+                        <th className="text-right py-3 px-4 text-xs font-medium text-muted">Clicks</th>
+                        <th className="text-right py-3 px-4 text-xs font-medium text-muted">CTR</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {ga4Data.map((artikel) => (
+                        <tr key={artikel.id} className="border-b border-gray-50 last:border-0">
+                          <td className="py-3 px-4">
+                            <a href={artikel.url} target="_blank" rel="noopener noreferrer" className="font-medium text-[#0f172a] hover:text-[#185FA5] hover:underline">
+                              {artikel.titel}
+                            </a>
+                          </td>
+                          <td className="py-3 px-4 text-right text-muted">{artikel.views.toLocaleString("nl-NL")}</td>
+                          <td className="py-3 px-4 text-right text-muted">{artikel.clicks}</td>
+                          <td className="py-3 px-4 text-right font-medium text-[#0f172a]">
+                            {artikel.views > 0 ? `${(artikel.ctr * 100).toFixed(1)}%` : "—"}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </>
           )}
         </div>
