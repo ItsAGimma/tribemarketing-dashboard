@@ -171,32 +171,36 @@ export default function AffiliateLinkManager() {
         ) : gefilterd.map((link) => (
           <div key={link.id} className="card p-0 overflow-hidden">
             <div
-              className="flex items-center gap-4 p-4 cursor-pointer hover:bg-gray-50/50 transition-colors"
+              className="p-4 cursor-pointer hover:bg-gray-50/50 transition-colors"
               onClick={() => setUitgeklapt(uitgeklapt === link.id ? null : link.id)}
             >
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-0.5">
-                  <p className="font-semibold text-[#0f172a]">{link.naam}</p>
-                  {link.platform && <span className="badge bg-brand-50 text-brand-600">{link.platform}</span>}
-                  {link.categorie && <span className="badge bg-gray-100 text-gray-600">{link.categorie}</span>}
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-[#0f172a] leading-snug">{link.naam}</p>
+                  {(link.platform || link.categorie) && (
+                    <div className="flex flex-wrap items-center gap-1.5 mt-1">
+                      {link.platform && <span className="badge bg-brand-50 text-brand-600">{link.platform}</span>}
+                      {link.categorie && <span className="badge bg-gray-100 text-gray-600">{link.categorie}</span>}
+                    </div>
+                  )}
+                  {link.token && (
+                    <p className="text-xs text-muted mt-1">{REDIRECT_BASE}/{link.token}</p>
+                  )}
                 </div>
-                {link.token && (
-                  <p className="text-xs text-muted mt-0.5">{REDIRECT_BASE}/{link.token}</p>
-                )}
-              </div>
-              <div className="flex items-center gap-1 shrink-0">
-                <span className="text-xs text-muted mr-2">{link.artikelen.length} {link.artikelen.length === 1 ? "artikel" : "artikelen"}</span>
-                {link.token && (
-                  <button onClick={(e) => kopieerRedirect(link, e)} className="p-1.5 rounded-lg text-gray-400 hover:text-[#185FA5] hover:bg-blue-50 transition-colors" title="Kopieer redirect URL">
-                    {gekopieerd === link.id ? <Check size={14} className="text-green-500" /> : <Copy size={14} />}
-                  </button>
-                )}
-                <button onClick={(e) => { e.stopPropagation(); openBewerken(link); }} className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors"><Pencil size={14} /></button>
-                <button onClick={(e) => { e.stopPropagation(); handleVerwijder(link.id); }} className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"><Trash2 size={14} /></button>
-                <div className="w-5 flex justify-center text-gray-400">
-                  {uitgeklapt === link.id ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
+                <div className="flex items-center gap-1 shrink-0 mt-0.5">
+                  {link.token && (
+                    <button onClick={(e) => kopieerRedirect(link, e)} className="p-1.5 rounded-lg text-gray-400 hover:text-[#185FA5] hover:bg-blue-50 transition-colors" title="Kopieer redirect URL">
+                      {gekopieerd === link.id ? <Check size={14} className="text-green-500" /> : <Copy size={14} />}
+                    </button>
+                  )}
+                  <button onClick={(e) => { e.stopPropagation(); openBewerken(link); }} className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors"><Pencil size={14} /></button>
+                  <button onClick={(e) => { e.stopPropagation(); handleVerwijder(link.id); }} className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"><Trash2 size={14} /></button>
+                  <div className="w-5 flex justify-center text-gray-400">
+                    {uitgeklapt === link.id ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
+                  </div>
                 </div>
               </div>
+              <p className="text-xs text-muted mt-2">{link.artikelen.length} {link.artikelen.length === 1 ? "artikel" : "artikelen"}</p>
             </div>
 
             {uitgeklapt === link.id && (

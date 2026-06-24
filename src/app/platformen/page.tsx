@@ -50,7 +50,7 @@ export default function AffiliatePage() {
             <div className="card"><p className="text-sm text-muted">Nog geen klikdata beschikbaar. Gebruik de redirect links in je artikelen om kliks bij te houden.</p></div>
           ) : (
             <>
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 <div className="rounded-xl p-4" style={{ background: "var(--color-background-secondary, #f8f9fb)" }}>
                   <p className="text-xs text-muted mb-1">Totaal kliks</p>
                   <p className="text-xl font-medium">{klikData.reduce((s, l) => s + l.kliks, 0)}</p>
@@ -65,8 +65,8 @@ export default function AffiliatePage() {
                 </div>
               </div>
 
-              <div className="card p-0 overflow-hidden">
-                <table className="w-full text-sm">
+              <div className="card p-0 overflow-x-auto">
+                <table className="w-full text-sm min-w-[480px]">
                   <thead>
                     <tr className="border-b border-gray-100">
                       <th className="text-left py-3 px-4 text-xs font-medium text-muted">Link</th>

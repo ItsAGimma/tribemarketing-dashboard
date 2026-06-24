@@ -20,8 +20,9 @@ export default function Tabs({
   className?: string;
 }) {
   return (
+    <div className={`overflow-x-auto ${className}`}>
     <div
-      className={`inline-flex flex-wrap gap-1 bg-white p-1 ${className}`}
+      className="inline-flex gap-1 bg-white p-1 min-w-max"
       style={{ border: "1px solid #EBEBEA", borderRadius: 10, boxShadow: "0 1px 3px rgba(0,0,0,0.06)" }}
     >
       {tabs.map((tab) => {
@@ -40,6 +41,7 @@ export default function Tabs({
           </button>
         );
       })}
+    </div>
     </div>
   );
 }
